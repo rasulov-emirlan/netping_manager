@@ -43,9 +43,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := watcher.Walk(); err != nil {
+	v, err := watcher.Walk()
+	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println(v)
 	s, err := server.NewServer(watcher, cfg.Server.Port, cfg.Server.TimeoutWrite, cfg.Server.TimeoutRead)
 	if err != nil {
 		log.Fatal(err)

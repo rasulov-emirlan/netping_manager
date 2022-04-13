@@ -1,8 +1,6 @@
 package watcher
 
 import (
-	"log"
-
 	"github.com/gosnmp/gosnmp"
 )
 
@@ -28,7 +26,14 @@ func NewWatcher(l map[string]Location) (*Watcher, error) {
 	}, nil
 }
 
-func (w *Watcher) Walk() error {
+type walkResponse struct {
+	Values map[string]int `json:"values"`
+}
+
+func (w *Watcher) Walk() (*walkResponse, error) {
+	resp := &walkResponse{
+		Values: make(map[string]int),
+	}
 	for _, v := range w.Locations {
 		var oids []string
 		var names []string
@@ -38,16 +43,23 @@ func (w *Watcher) Walk() error {
 		}
 		result, err := v.Conn.Get(oids)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for i, vv := range result.Variables {
-			log.Printf("The socket with name: %s, has value of: %d.\n", names[i], vv.Value)
+			resp.Values[names[i]] = vv.Value.(int)
 		}
 	}
-	return nil
+	return resp, nil
 }
 
-func (w *Watcher) ToggleSocket(locationName, socketName string, value int) error {
+type toggleSocketResponse struct {
+	Values map[string]int `json:"values"`
+}
+
+func (w *Watcher) ToggleSocket(locationName, socketName string, value int) (*toggleSocketResponse, error) {
+	resp := &toggleSocketResponse{
+		Values: make(map[string]int),
+	}
 	l := w.Locations[locationName]
 	s := Socket{}
 	for _, v := range l.Sockets {
@@ -60,10 +72,10 @@ func (w *Watcher) ToggleSocket(locationName, socketName string, value int) error
 
 	result, err := l.Conn.Set(setArgs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, vv := range result.Variables {
-		log.Printf("The socket with name: %s, has value of: %d.\n", socketName, vv.Value)
+		resp.Values[socketName] = vv.Value.(int)
 	}
-	return nil
+	return resp, nil
 }

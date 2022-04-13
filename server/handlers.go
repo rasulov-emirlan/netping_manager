@@ -18,18 +18,20 @@ func setValue(w *watcher.Watcher) echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		if err := w.ToggleSocket(req.Location, req.Socket, req.Value); err != nil {
+		v, err := w.ToggleSocket(req.Location, req.Socket, req.Value)
+		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-		return c.String(http.StatusOK, "everything is cool")
+		return c.JSON(http.StatusOK, v)
 	}
 }
 
 func getAll(w *watcher.Watcher) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if err := w.Walk(); err != nil {
+		v, err := w.Walk()
+		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-		return c.String(http.StatusOK, "everything is cool")
+		return c.JSON(http.StatusOK, v)
 	}
 }

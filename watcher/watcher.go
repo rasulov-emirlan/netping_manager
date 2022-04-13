@@ -16,7 +16,7 @@ type Location struct {
 	Address string `json:"-"`
 	// Conn is a connection for the netping at the location
 	Conn *gosnmp.GoSNMP `json:"-"`
-	// Sockets are "all" the Machines that are connector to the netping
+	// Sockets are "all" the Machines that are connected to the netping
 	// in that location. Well not queite all of them. You have to add them
 	// manualy so yeah :)
 	Sockets []Socket `json:"sockets"`

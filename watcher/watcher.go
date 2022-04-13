@@ -98,6 +98,8 @@ type walkResponse struct {
 	Values map[string]string `json:"values"`
 }
 
+// snmpget -v 2c -c SWITCH 192.168.0.100  .1.3.6.1.4.1.25728.8900.1.1.3.4
+
 func (w *Watcher) Walk() (*walkResponse, error) {
 	resp := &walkResponse{
 		Values: make(map[string]string),

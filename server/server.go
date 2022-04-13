@@ -25,7 +25,13 @@ func NewServer(w *watcher.Watcher, port string, tw, tr time.Duration) (*server, 
 }
 
 func (s *server) Start() error {
-	s.router.POST("/", setValue(s.watcher))
-	s.router.GET("/", getAll(s.watcher))
+	s.router.POST("/config/location", addLocation(s.watcher))
+	s.router.DELETE("/config/location", removeLocation(s.watcher))
+	s.router.POST("/config/socket", addSocket(s.watcher))
+	s.router.DELETE("/config/socket", removeSocket(s.watcher))
+
+	s.router.POST("/control", setValue(s.watcher))
+	s.router.GET("/control", getAll(s.watcher))
+
 	return s.router.Start(s.port)
 }

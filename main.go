@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/gosnmp/gosnmp"
 	"github.com/rasulov-emirlan/netping-manager/config"
 	"github.com/rasulov-emirlan/netping-manager/server"
 	"github.com/rasulov-emirlan/netping-manager/watcher"
@@ -21,25 +20,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	conn := gosnmp.Default
-	conn.Community = "SWITCH"
-	conn.Target = "192.168.0.100"
-	if err := conn.Connect(); err != nil {
+
+	watcher, err := watcher.NewWatcher()
+	if err != nil {
 		log.Fatal(err)
 	}
-	locations := map[string]watcher.Location{
-		"Default": {
-			Address: "192.168.0.100",
-			Conn:    conn,
-			Sockets: []watcher.Socket{
-				{
-					Name:    "Розетка",
-					Address: ".1.3.6.1.4.1.25728.8900.1.1.3.4",
-					Warning: "Are you sure? This will affect 4th line",
-				},
-			},
-		}}
-	watcher, err := watcher.NewWatcher(locations)
+	_, err = watcher.AddLocation("Ошская станция", "192.168.0.100", "SWITCH", 161)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = watcher.AddSocket("Ошская станция", "Кондиционер", ".1.3.6.1.4.1.25728.8900.1.1.3.4")
 	if err != nil {
 		log.Fatal(err)
 	}

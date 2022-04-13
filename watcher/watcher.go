@@ -1,38 +1,106 @@
 package watcher
 
 import (
+	"errors"
+
 	"github.com/gosnmp/gosnmp"
 )
 
 type Watcher struct {
-	Locations map[string]Location
+	Locations map[string]*Location
 }
 
+// Location represents a real location like 'Bishkek'.
 type Location struct {
-	Address string
-	Conn    *gosnmp.GoSNMP
-	Sockets []Socket
+	// Address represents the netping ipv4 for the location
+	Address string `json:"-"`
+	// Conn is a connection for the netping at the location
+	Conn *gosnmp.GoSNMP `json:"-"`
+	// Sockets are "all" the Machines that are connector to the netping
+	// in that location. Well not queite all of them. You have to add them
+	// manualy so yeah :)
+	Sockets []Socket `json:"sockets"`
 }
 
 type Socket struct {
 	Name    string
-	Warning string
 	Address string
 }
 
-func NewWatcher(l map[string]Location) (*Watcher, error) {
+// These are all the types of machines that can be connector to our sockets
+const (
+	TypeAirConditioner = iota + 1
+	TypeGenerator
+	TypeHeater
+)
+
+func NewWatcher() (*Watcher, error) {
 	return &Watcher{
-		Locations: l,
+		Locations: make(map[string]*Location),
 	}, nil
 }
 
+func (w *Watcher) AddLocation(locationName, address, community string, port int) (map[string]*Location, error) {
+	conn := *gosnmp.Default
+	conn.Target = address
+	conn.Port = uint16(port)
+	conn.Community = community
+	if err := conn.Connect(); err != nil {
+		return nil, err
+	}
+	w.Locations[locationName] = &Location{
+		Address: address,
+		Sockets: make([]Socket, 0),
+		Conn:    &conn,
+	}
+	return w.Locations, nil
+}
+
+func (w *Watcher) RemoveLocation(locationName string) (map[string]*Location, error) {
+	delete(w.Locations, locationName)
+	return w.Locations, nil
+}
+
+func (w *Watcher) AddSocket(locationName, socketName, socketMIB string) (map[string]*Location, error) {
+	v, ok := w.Locations[locationName]
+	if !ok {
+		return nil, errors.New("watcher: no such location")
+	}
+	v.Sockets = append(v.Sockets, Socket{
+		Name:    socketName,
+		Address: socketMIB,
+	})
+	res, err := v.Conn.Get([]string{socketMIB})
+	if err != nil {
+		return nil, err
+	}
+	if res.Error != gosnmp.NoError {
+		return nil, errors.New("watcher: something went wrong while checking socketMIB")
+	}
+	return w.Locations, nil
+}
+
+func (w *Watcher) RemoveSocket(locationName, socketName string) (map[string]*Location, error) {
+	v, ok := w.Locations[locationName]
+	if !ok {
+		return nil, errors.New("watcher: there is no such location")
+	}
+	for i, vv := range v.Sockets {
+		if vv.Name == socketName {
+			v.Sockets = append(v.Sockets[:i], v.Sockets[i+1:]...)
+			return w.Locations, nil
+		}
+	}
+	return w.Locations, errors.New("watcher: there was no such socket")
+}
+
 type walkResponse struct {
-	Values map[string]int `json:"values"`
+	Values map[string]string `json:"values"`
 }
 
 func (w *Watcher) Walk() (*walkResponse, error) {
 	resp := &walkResponse{
-		Values: make(map[string]int),
+		Values: make(map[string]string),
 	}
 	for _, v := range w.Locations {
 		var oids []string
@@ -46,7 +114,11 @@ func (w *Watcher) Walk() (*walkResponse, error) {
 			return nil, err
 		}
 		for i, vv := range result.Variables {
-			resp.Values[names[i]] = vv.Value.(int)
+			if vv.Value.(int) == 0 {
+				resp.Values[names[i]] = "off"
+			} else {
+				resp.Values[names[i]] = "on"
+			}
 		}
 	}
 	return resp, nil
@@ -60,7 +132,10 @@ func (w *Watcher) ToggleSocket(locationName, socketName string, value int) (*tog
 	resp := &toggleSocketResponse{
 		Values: make(map[string]int),
 	}
-	l := w.Locations[locationName]
+	l, ok := w.Locations[locationName]
+	if !ok {
+		return nil, errors.New("watcher: there is no such location")
+	}
 	s := Socket{}
 	for _, v := range l.Sockets {
 		if v.Name == socketName {

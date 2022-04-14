@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	cfg := &config.Config{}
+	var cfg *config.Config
 	var err error
 	if len(os.Args) > 1 {
 		cfg, err = config.NewConfig(os.Args[1:]...)

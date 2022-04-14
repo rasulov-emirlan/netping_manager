@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 
 	"go.uber.org/zap"
 )
@@ -15,6 +16,18 @@ type Service interface {
 
 	CheckAll(ctx context.Context) ([]*Location, error)
 	ToggleSocket(ctx context.Context, socketID, locationId int, onOrOff int) ([]*Location, error)
+}
+
+type Repository interface {
+	CreateSocket(ctx context.Context, s Socket) (*Socket, error)
+	UpdateSocket(ctx context.Context, s Socket) (*Socket, error)
+	DeleteSocket(ctx context.Context, socketID int) error
+	
+	CreateLocation(ctx context.Context, l Location) (*Location, error)
+	UpdateLocation(ctx context.Context, l Location) (*Location, error)
+	DeleteLocation(ctx context.Context, locationID int) error
+
+	ListLocations(ctx context.Context) ([]*Location, error)
 }
 
 const (
@@ -35,13 +48,18 @@ type Watcher interface {
 
 type service struct {
 	w   Watcher
+	repo Repository
 	log *zap.SugaredLogger
 }
 
 func NewService(w Watcher, l *zap.SugaredLogger) (Service, error) {
+	if w == nil || l == nil {
+		return nil, errors.New("manager: arguments for NewService cannot be nil")
+	}
 	return &service{
 		w:   w,
 		log: l,
+		// repo: repo,
 	}, nil
 }
 

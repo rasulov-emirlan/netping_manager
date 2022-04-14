@@ -1,10 +1,10 @@
-package server
+package rest
 
 import (
+	"context"
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rasulov-emirlan/netping-manager/internal/pkg/watcher"
 )
 
 type Registrator interface {
@@ -12,20 +12,18 @@ type Registrator interface {
 }
 
 type server struct {
-	port    string
-	router  *echo.Echo
-	watcher *watcher.Watcher
+	port   string
+	router *echo.Echo
 
 	managerRegistrator Registrator
 }
 
-func NewServer(w *watcher.Watcher, port string, tw, tr time.Duration, m Registrator) (*server, error) {
+func NewServer(port string, tw, tr time.Duration, m Registrator) (*server, error) {
 	e := echo.New()
 	e.Server.ReadTimeout = tr
 	e.Server.WriteTimeout = tw
 	return &server{
 		router:             e,
-		watcher:            w,
 		port:               port,
 		managerRegistrator: m,
 	}, nil
@@ -46,4 +44,8 @@ func (s *server) Start() error {
 	}
 
 	return s.router.Start(s.port)
+}
+
+func (s *server) Shutdown(ctx context.Context) error {
+	return s.router.Shutdown(ctx)
 }

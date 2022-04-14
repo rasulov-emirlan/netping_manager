@@ -57,6 +57,7 @@ func (h *handler) setValue() echo.HandlerFunc {
 func (h *handler) getAll() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		v, err := h.service.CheckAll(c.Request().Context())
+		log.Println(err)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}

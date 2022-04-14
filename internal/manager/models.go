@@ -16,4 +16,5 @@ type Socket struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
 	SNMPmib string `json:"snmpMib"`
+	IsON    bool   `json:"isON"`
 }

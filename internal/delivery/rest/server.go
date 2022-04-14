@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rasulov-emirlan/netping-manager/watcher"
+	"github.com/rasulov-emirlan/netping-manager/internal/pkg/watcher"
 )
 
 type Registrator interface {

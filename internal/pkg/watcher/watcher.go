@@ -207,13 +207,15 @@ func (w *Watcher) ToggleSocket(ctx context.Context, socketID, locationId, onOrOf
 	if err != nil {
 		return nil, err
 	}
-	for _, vv := range result.Variables {
-		if vv.Value.(int) == 1 {
-			w.Locations[index].model.Sockets[indexSocket].IsON = true
-			continue
-		}
+	if result.Error != gosnmp.NoError {
+		return nil, fmt.Errorf("watcher: gosnmp error: %d", result.Error)
+	}
+	if onOrOff == 1 {
+		w.Locations[index].model.Sockets[indexSocket].IsON = true
+	} else {
 		w.Locations[index].model.Sockets[indexSocket].IsON = false
 	}
+
 	return locationsToService(w.Locations), nil
 }
 

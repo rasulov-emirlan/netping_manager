@@ -2,7 +2,6 @@ package rest
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -45,7 +44,6 @@ func (h *handler) setValue() echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		log.Println(req)
 		v, err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.Location, req.Value)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
@@ -57,7 +55,6 @@ func (h *handler) setValue() echo.HandlerFunc {
 func (h *handler) getAll() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		v, err := h.service.CheckAll(c.Request().Context())
-		log.Println(err)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}

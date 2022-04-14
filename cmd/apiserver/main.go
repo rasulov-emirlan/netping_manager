@@ -38,10 +38,11 @@ func main() {
 		SNMPcommunity: "SWITCH",
 		SNMPport:      161,
 		Sockets: []*manager.Socket{{
-			ID:      1,
-			Name:    "Кондиционер",
-			SNMPmib: ".1.3.6.1.4.1.25728.8900.1.1.3.4",
-			IsON:    false,
+			ID:         1,
+			Name:       "Кондиционер",
+			SNMPmib:    ".1.3.6.1.4.1.25728.8900.1.1.3.4",
+			IsON:       false,
+			ObjectType: manager.TypeAC,
 		}},
 	}}
 

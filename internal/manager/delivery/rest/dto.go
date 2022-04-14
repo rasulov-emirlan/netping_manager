@@ -14,9 +14,10 @@ func toServiceLocation(
 	}
 }
 
-func toServiceSocket(name, SNMPmib string) manager.Socket {
+func toServiceSocket(name, SNMPmib string, objectType int) manager.Socket {
 	return manager.Socket{
-		Name:    name,
-		SNMPmib: SNMPmib,
+		Name:       name,
+		SNMPmib:    SNMPmib,
+		ObjectType: objectType,
 	}
 }

@@ -18,8 +18,8 @@ type Service interface {
 }
 
 const (
-	SocketOn = iota + 1
-	SocketOff
+	SocketOn  = 1
+	SocketOff = 2
 )
 
 type Watcher interface {

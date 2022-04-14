@@ -59,6 +59,7 @@ func (w *Watcher) AddLocation(ctx context.Context, l manager.Location) ([]*manag
 	})
 	return locationsToService(w.Locations), nil
 }
+
 func (w *Watcher) RemoveLocation(ctx context.Context, locationID int) ([]*manager.Location, error) {
 	check := false
 	index := 0
@@ -74,8 +75,8 @@ func (w *Watcher) RemoveLocation(ctx context.Context, locationID int) ([]*manage
 	}
 	w.Locations = append(w.Locations[:index], w.Locations[index+1:]...)
 	return locationsToService(w.Locations), nil
-
 }
+
 func (w *Watcher) AddSocket(ctx context.Context, s manager.Socket, locationID int) ([]*manager.Location, error) {
 	check := false
 	index := 0

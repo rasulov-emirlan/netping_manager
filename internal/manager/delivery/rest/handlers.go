@@ -108,13 +108,17 @@ func (h *handler) addSocket() echo.HandlerFunc {
 		LocationID int    `json:"locationID"`
 		SocketName string `json:"socketName"`
 		SocketMIB  string `json:"socketMIB"`
+		SocketType int    `json:"socketType"`
 	}
 	return func(c echo.Context) error {
 		req := &Request{}
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		s := toServiceSocket(req.SocketName, req.SocketMIB)
+		if req.SocketType < 1 || req.SocketType > 3 {
+			return c.JSON(http.StatusBadRequest, "Incorrect socket type")
+		}
+		s := toServiceSocket(req.SocketName, req.SocketMIB, req.SocketType)
 		v, err := h.service.AddSocket(c.Request().Context(), s, req.LocationID)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())

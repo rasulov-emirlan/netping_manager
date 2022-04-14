@@ -17,4 +17,12 @@ type Socket struct {
 	Name    string `json:"name"`
 	SNMPmib string `json:"snmpMib"`
 	IsON    bool   `json:"isON"`
+
+	ObjectType int `json:"objectType"`
 }
+
+const (
+	TypeAC = iota + 1
+	TypeHeater
+	TypeGenerator
+)

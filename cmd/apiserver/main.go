@@ -9,13 +9,9 @@ import (
 	"syscall"
 
 	"github.com/rasulov-emirlan/netping-manager/config"
-	"github.com/rasulov-emirlan/netping-manager/internal/manager"
+	"github.com/rasulov-emirlan/netping-manager/internal/compositors"
 
 	"github.com/rasulov-emirlan/netping-manager/internal/delivery/rest"
-	managerH "github.com/rasulov-emirlan/netping-manager/internal/manager/delivery/rest"
-	"github.com/rasulov-emirlan/netping-manager/internal/pkg/watcher"
-	"github.com/rasulov-emirlan/netping-manager/pkg/logger"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -30,36 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	l := []*manager.Location{{
-		ID:            1,
-		Name:          "Ошская станция",
-		RealLocation:  "Город Ош ул.Бакаева",
-		SNMPaddress:   "192.168.0.100",
-		SNMPcommunity: "SWITCH",
-		SNMPport:      161,
-		Sockets: []*manager.Socket{{
-			ID:         1,
-			Name:       "Кондиционер",
-			SNMPmib:    ".1.3.6.1.4.1.25728.8900.1.1.3.4",
-			IsON:       false,
-			ObjectType: manager.TypeAC,
-		}},
-	}}
-
-	w, err := watcher.NewWatcher(l)
-	if err != nil {
-		log.Fatal(err)
-	}
-	level := zap.NewAtomicLevelAt(zap.InfoLevel)
-	z, err := logger.NewZap("logs.log", true, level)
-	if err != nil {
-		log.Fatal(err)
-	}
-	s, err := manager.NewService(w, z)
-	if err != nil {
-		log.Fatal(err)
-	}
-	h, err := managerH.NewHandler(s)
+	h, err := compositors.NewManager(*cfg)
 	if err != nil {
 		log.Fatal(err)
 	}

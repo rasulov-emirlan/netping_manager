@@ -35,6 +35,11 @@ const (
 	SocketOff = 2
 )
 
+type Sentry interface{
+	CheckSockets(ctx context.Context, address, sommunity string, port int) ([]*Socket, error)
+	ToggleSocket(ctx context.Context, socketMIB, address, community string, port int) (*Socket, error)
+}
+
 type Watcher interface {
 	AddLocation(ctx context.Context, l Location) ([]*Location, error)
 	RemoveLocation(ctx context.Context, locationID int) ([]*Location, error)
@@ -52,14 +57,14 @@ type service struct {
 	log *zap.SugaredLogger
 }
 
-func NewService(w Watcher, l *zap.SugaredLogger) (Service, error) {
+func NewService(w Watcher, l *zap.SugaredLogger, repo Repository) (Service, error) {
 	if w == nil || l == nil {
 		return nil, errors.New("manager: arguments for NewService cannot be nil")
 	}
 	return &service{
 		w:   w,
 		log: l,
-		// repo: repo,
+		repo: repo,
 	}, nil
 }
 

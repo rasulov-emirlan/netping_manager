@@ -1,5 +1,7 @@
 package watcher
 
+// This package is deprecated
+
 import (
 	"context"
 	"errors"

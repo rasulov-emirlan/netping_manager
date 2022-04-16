@@ -15,7 +15,13 @@ type Location struct {
 type Socket struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
+
+	SNMPaddress   string `json:"snmpAddress"`
+	SNMPport      int    `json:"snmpPort"`
+	SNMPcommunity string `json:"snmpCommunity"`
+	
 	SNMPmib string `json:"snmpMib"`
+
 	IsON    bool   `json:"isON"`
 
 	ObjectType int `json:"objectType"`

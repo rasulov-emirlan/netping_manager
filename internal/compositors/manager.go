@@ -1,8 +1,6 @@
 package compositors
 
 import (
-	"log"
-
 	"github.com/rasulov-emirlan/netping-manager/config"
 	"github.com/rasulov-emirlan/netping-manager/internal/delivery/rest"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
@@ -44,7 +42,6 @@ func NewManager(cfg config.Config) (rest.Registrator, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("halo")
 	repo, err := mysql.NewRepository(dbConn)
 	if err != nil {
 		return nil, err

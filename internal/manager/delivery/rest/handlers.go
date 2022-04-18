@@ -25,6 +25,7 @@ func NewHandler(service manager.Service) (*handler, error) {
 func (h *handler) Register(router *echo.Group) error {
 	router.POST("/config/socket", h.addSocket())
 	router.DELETE("/config/socket/:id", h.removeSocket())
+	router.GET("/config/sockets", h.listSockets())
 
 	router.POST("/control", h.setValue())
 	router.GET("/control", h.getAll())
@@ -33,7 +34,6 @@ func (h *handler) Register(router *echo.Group) error {
 
 func (h *handler) setValue() echo.HandlerFunc {
 	type Request struct {
-		Location int `json:"locationID"`
 		Socket   int `json:"socketID"`
 		TurnOn    bool `json:"turnON"`
 	}
@@ -103,5 +103,15 @@ func (h *handler) removeSocket() echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 		return c.NoContent(http.StatusOK)
+	}
+}
+
+func (h *handler) listSockets() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		v, err := h.service.ListAllSockets(c.Request().Context())
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(http.StatusOK, v)
 	}
 }

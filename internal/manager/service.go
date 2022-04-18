@@ -9,6 +9,7 @@ import (
 
 type Service interface {
 	AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error)
+	ListAllSockets(ctx context.Context) ([]*Location, error)
 	RemoveSocket(ctx context.Context, socketID int) error
 
 	CheckAll(ctx context.Context, locationAddress string) ([]*Socket, error)
@@ -22,6 +23,7 @@ type Repository interface {
 
 	FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*Socket, error)
 	FindSocketByID(ctx context.Context, socketID int) (*Socket, error)
+	ListAllSockets(ctx context.Context) ([]*Location, error)
 }
 
 type Sentry interface{
@@ -57,11 +59,21 @@ func (s *service) CheckAll(ctx context.Context, locationAddress string) ([]*Sock
 	return sock, nil
 }
 
+func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
+	defer s.log.Sync()
+	s.log.Info("Service: ListAllSockets()")
+	l, err := s.repo.ListAllSockets(ctx)
+	if err != nil {
+		s.log.Errorw("Service: ListAllSockets()", zap.String("error", err.Error()))
+		return nil, err
+	}
+	return l, nil
+}
+
 func (s *service) AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error) {
 	defer s.log.Sync()
 	s.log.Info("Service: AddSocket()")
 	socket.SNMPaddress=locationAddress
-	// TODO: add repo call
 	sock, err := s.repo.CreateSocket(ctx, socket)
 	if err != nil {
 		return nil, err

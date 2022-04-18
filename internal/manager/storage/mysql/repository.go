@@ -94,3 +94,50 @@ func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager
 	`, socketID).Scan(&socket.Name, &socket.SNMPmib, &socket.SNMPaddress, &socket.ObjectType)
 	return socket, err
 }
+
+const listAllSocketsSQL = `
+	select netping_address, id, name, mib_address, socket_type_id from sockets group by netping_address ORDER BY netping_address ASC;
+`
+
+func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {
+	rows, err := r.conn.Query(listAllSocketsSQL)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		locationsMap = make(map[string][]*manager.Socket)
+		netpingAddress, name, mibAddress string
+		id, socketType int
+	)
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&netpingAddress,
+			&id,
+			&name,
+			&mibAddress,
+			&socketType,
+		); err != nil {
+			return nil, err
+		}
+		locationsMap[netpingAddress] = append(locationsMap[netpingAddress], &manager.Socket{
+			ID: id,
+			Name: name,
+			SNMPaddress: netpingAddress,
+			SNMPmib: mibAddress,
+		})
+	}
+
+	locations := make([]*manager.Location, len(locationsMap))
+	index := 0
+	for i, v := range locationsMap {
+		locations[index] = &manager.Location{
+			SNMPaddress: i,
+			Sockets: v,
+		}
+		index++
+	}
+
+	return locations, nil
+}

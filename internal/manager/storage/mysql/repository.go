@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -32,26 +31,25 @@ const createSocketSQL = `
 `
 
 func (r *repository) CreateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
-	log.Println(s.Name)
-	log.Println(s.SNMPmib)
-	log.Println(s.SNMPaddress)
-	log.Println(s.ObjectType)
-	
 	err := r.conn.QueryRow(createSocketSQL, s.Name, s.SNMPmib, s.SNMPaddress, s.ObjectType).Scan(&s.ID)
 	return &s, err
 }
 
-func (r *repository) UpdateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
-	return &s, r.conn.QueryRow(`
-	UPDATE sockets SET name = ?, mib_addre	ss = ?, netping_address = ?, socket_type_id = ?
+const updateSocketSQL = `
+UPDATE sockets SET name = ?, mib_addre	ss = ?, netping_address = ?, socket_type_id = ?
 	WHERE id = ?;
-	`,s.Name, s.SNMPmib, s.SNMPaddress, s.ObjectType, s.ID).Err()
+`
+
+func (r *repository) UpdateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
+	return &s, r.conn.QueryRow(updateSocketSQL, s.Name, s.SNMPmib, s.SNMPaddress, s.ObjectType, s.ID).Err()
 }
 
-func (r *repository) DeleteSocket(ctx context.Context, socketID int) error {
-	return r.conn.QueryRow(`
+const deleteSocketSQL = `
 	DELETE FROM sockets WHERE id = ?;
-	`, socketID).Err()
+`
+
+func (r *repository) DeleteSocket(ctx context.Context, socketID int) error {
+	return r.conn.QueryRow(deleteSocketSQL, socketID).Err()
 }
 
 func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*manager.Socket, error) {
@@ -85,18 +83,20 @@ func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress 
 	return sockets, nil
 }
 
+const findSocketByIDsql = `
+	SELECT name, mib_address, netping_address, socket_type_id FROM sockets WHERE id = ?;
+`
+
 func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager.Socket, error) {
 	socket := &manager.Socket{
 		ID: socketID,
 	}
-	err := r.conn.QueryRow(`
-	SELECT name, mib_address, netping_address, socket_type_id FROM sockets WHERE id = ?;
-	`, socketID).Scan(&socket.Name, &socket.SNMPmib, &socket.SNMPaddress, &socket.ObjectType)
+	err := r.conn.QueryRow(findSocketByIDsql, socketID).Scan(&socket.Name, &socket.SNMPmib, &socket.SNMPaddress, &socket.ObjectType)
 	return socket, err
 }
 
 const listAllSocketsSQL = `
-	select netping_address, id, name, mib_address, socket_type_id from sockets group by netping_address ORDER BY netping_address ASC;
+	SELECT netping_address, id, name, mib_address, socket_type_id from sockets group by netping_address ORDER BY netping_address ASC;
 `
 
 func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {

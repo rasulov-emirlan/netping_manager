@@ -86,8 +86,9 @@ func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress 
 }
 
 func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager.Socket, error) {
-	var socket *manager.Socket
-	socket.ID = socketID
+	socket := &manager.Socket{
+		ID: socketID,
+	}
 	err := r.conn.QueryRow(`
 	SELECT name, mib_address, netping_address, socket_type_id FROM sockets WHERE id = ?;
 	`, socketID).Scan(&socket.Name, &socket.SNMPmib, &socket.SNMPaddress, &socket.ObjectType)

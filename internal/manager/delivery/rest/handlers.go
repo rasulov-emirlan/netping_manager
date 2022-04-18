@@ -24,7 +24,7 @@ func NewHandler(service manager.Service) (*handler, error) {
 
 func (h *handler) Register(router *echo.Group) error {
 	router.POST("/config/socket", h.addSocket())
-	router.DELETE("/config/socket", h.removeSocket())
+	router.DELETE("/config/socket/:id", h.removeSocket())
 
 	router.POST("/control", h.setValue())
 	router.GET("/control", h.getAll())
@@ -90,7 +90,7 @@ func (h *handler) addSocket() echo.HandlerFunc {
 
 func (h *handler) removeSocket() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		socket := c.QueryParam("socket")
+		socket := c.Param("id")
 		if socket == "" {
 			return c.JSON(http.StatusBadRequest, "This endpoint needs locationName and socketName in query params")
 		}

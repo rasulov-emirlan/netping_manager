@@ -36,8 +36,8 @@ func (r *repository) CreateSocket(ctx context.Context, s manager.Socket) (*manag
 }
 
 const updateSocketSQL = `
-UPDATE sockets SET name = ?, mib_addre	ss = ?, netping_address = ?, socket_type_id = ?
-	WHERE id = ?;
+	UPDATE sockets SET name = ?, mib_addre	ss = ?, netping_address = ?, socket_type_id = ?
+		WHERE id = ?;
 `
 
 func (r *repository) UpdateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
@@ -52,10 +52,12 @@ func (r *repository) DeleteSocket(ctx context.Context, socketID int) error {
 	return r.conn.QueryRow(deleteSocketSQL, socketID).Err()
 }
 
-func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*manager.Socket, error) {
-	rows, err := r.conn.Query(`
+const findSocketsByLocationSQL = `
 	SELECT id, name, mib_address, socket_type_id FROM sockets WHERE netping_address = ?;
-	`, locationAddress)
+`
+
+func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*manager.Socket, error) {
+	rows, err := r.conn.Query(findSocketByIDsql, locationAddress)
 	if err != nil {
 		return nil, err
 	}

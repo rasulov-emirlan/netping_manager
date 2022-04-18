@@ -12,7 +12,7 @@ type repository struct {
 	conn *pgxpool.Pool
 }
 
-func NewRepository(conn *pgxpool.Pool) (manager.Repository, error) {
+func NewRepository(conn *pgxpool.Pool) (*repository, error) {
 	if conn == nil {
 		return nil, errors.New("repository: connection cannot be nil")
 	}
@@ -20,8 +20,6 @@ func NewRepository(conn *pgxpool.Pool) (manager.Repository, error) {
 		conn: conn,
 	}, nil
 }
-
-const sqlCreateSocket = ``
 
 func (r *repository) CreateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
 	panic("not implemented")
@@ -48,5 +46,13 @@ func (r *repository) DeleteLocation(ctx context.Context, locationID int) error {
 }
 
 func (r *repository) ListLocations(ctx context.Context) ([]*manager.Location, error) {
+	panic("not implemented")
+}
+
+func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager.Socket, error) {
+	panic("not implemented")
+}
+
+func (r *repository) FindLocationByID(ctx context.Context, locationID int) (*manager.Location, error) {
 	panic("not implemented")
 }

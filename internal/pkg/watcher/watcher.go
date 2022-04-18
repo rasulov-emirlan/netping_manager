@@ -27,7 +27,7 @@ const (
 	TypeHeater
 )
 
-func NewWatcher(l []*manager.Location) (manager.Watcher, error) {
+func NewWatcher(l []*manager.Location) (*Watcher, error) {
 	locations := make([]*Location, len(l))
 	for i, v := range l {
 		conn := *gosnmp.Default

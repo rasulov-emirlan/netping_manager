@@ -23,8 +23,6 @@ func NewHandler(service manager.Service) (*handler, error) {
 }
 
 func (h *handler) Register(router *echo.Group) error {
-	router.POST("/config/location", h.addLocation())
-	router.DELETE("/config/location", h.removeLocation())
 	router.POST("/config/socket", h.addSocket())
 	router.DELETE("/config/socket", h.removeSocket())
 
@@ -37,65 +35,28 @@ func (h *handler) setValue() echo.HandlerFunc {
 	type Request struct {
 		Location int `json:"locationID"`
 		Socket   int `json:"socketID"`
-		Value    int `json:"newValue"`
+		TurnOn    bool `json:"turnON"`
 	}
 	return func(c echo.Context) error {
 		req := &Request{}
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		v, err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.Location, req.Value)
+		err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(http.StatusOK, v)
+		return c.NoContent(http.StatusOK)
 	}
 }
 
 func (h *handler) getAll() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		v, err := h.service.CheckAll(c.Request().Context())
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+		locationAddress := c.QueryParam("location")
+		if locationAddress == "" {
+			return c.JSON(http.StatusBadRequest, "you need location in query params")
 		}
-		return c.JSON(http.StatusOK, v)
-	}
-}
-
-func (h *handler) addLocation() echo.HandlerFunc {
-	type Request struct {
-		Name         string `json:"name"`
-		RealLocation string `json:"realLocation"`
-
-		SNMPaddress   string `json:"snmpAddress"`
-		SNMPport      int    `json:"snmpPort"`
-		SNMPcommunity string `json:"snmpCommunity"`
-	}
-	return func(c echo.Context) error {
-		req := &Request{}
-		if err := c.Bind(req); err != nil {
-			return c.JSON(http.StatusBadRequest, err.Error())
-		}
-		l := toServiceLocation(req.Name, req.RealLocation, req.SNMPaddress, req.SNMPcommunity, req.SNMPport)
-		v, err := h.service.AddLocation(c.Request().Context(), l)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
-		return c.JSON(http.StatusOK, v)
-	}
-}
-
-func (h *handler) removeLocation() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		location := c.QueryParam("location")
-		if location == "" {
-			return c.JSON(http.StatusBadRequest, "There is no query param for 'name'")
-		}
-		id, err := strconv.Atoi(location)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, err.Error())
-		}
-		v, err := h.service.RemoveLocation(c.Request().Context(), id)
+		v, err := h.service.CheckAll(c.Request().Context(), locationAddress)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
@@ -105,10 +66,10 @@ func (h *handler) removeLocation() echo.HandlerFunc {
 
 func (h *handler) addSocket() echo.HandlerFunc {
 	type Request struct {
-		LocationID int    `json:"locationID"`
-		SocketName string `json:"socketName"`
-		SocketMIB  string `json:"socketMIB"`
-		SocketType int    `json:"socketType"`
+		LocationAddress string `json:"locationAddress"`
+		SocketName 		string `json:"socketName"`
+		SocketMIB  		string `json:"socketMIB"`
+		SocketType 		int    `json:"socketType"`
 	}
 	return func(c echo.Context) error {
 		req := &Request{}
@@ -119,7 +80,7 @@ func (h *handler) addSocket() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, "Incorrect socket type")
 		}
 		s := toServiceSocket(req.SocketName, req.SocketMIB, req.SocketType)
-		v, err := h.service.AddSocket(c.Request().Context(), s, req.LocationID)
+		v, err := h.service.AddSocket(c.Request().Context(), s, req.LocationAddress)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
@@ -129,23 +90,18 @@ func (h *handler) addSocket() echo.HandlerFunc {
 
 func (h *handler) removeSocket() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		location := c.QueryParam("location")
 		socket := c.QueryParam("socket")
-		if location == "" || socket == "" {
+		if socket == "" {
 			return c.JSON(http.StatusBadRequest, "This endpoint needs locationName and socketName in query params")
 		}
-		locationId, err := strconv.Atoi(location)
+		socketId, err := strconv.Atoi(socket)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		socketId, err := strconv.Atoi(location)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, err.Error())
-		}
-		v, err := h.service.RemoveSocket(c.Request().Context(), socketId, locationId)
+		err = h.service.RemoveSocket(c.Request().Context(), socketId)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(http.StatusOK, v)
+		return c.NoContent(http.StatusOK)
 	}
 }

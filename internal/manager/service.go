@@ -8,128 +8,90 @@ import (
 )
 
 type Service interface {
-	AddLocation(ctx context.Context, l Location) ([]*Location, error)
-	RemoveLocation(ctx context.Context, locationID int) ([]*Location, error)
+	AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error)
+	RemoveSocket(ctx context.Context, socketID int) error
 
-	AddSocket(ctx context.Context, s Socket, locationID int) ([]*Location, error)
-	RemoveSocket(ctx context.Context, socketID, locationID int) ([]*Location, error)
-
-	CheckAll(ctx context.Context) ([]*Location, error)
-	ToggleSocket(ctx context.Context, socketID, locationId int, onOrOff int) ([]*Location, error)
+	CheckAll(ctx context.Context, locationAddress string) ([]*Socket, error)
+	ToggleSocket(ctx context.Context, socketID int, onOrOff bool) error
 }
 
 type Repository interface {
 	CreateSocket(ctx context.Context, s Socket) (*Socket, error)
 	UpdateSocket(ctx context.Context, s Socket) (*Socket, error)
 	DeleteSocket(ctx context.Context, socketID int) error
-	
-	CreateLocation(ctx context.Context, l Location) (*Location, error)
-	UpdateLocation(ctx context.Context, l Location) (*Location, error)
-	DeleteLocation(ctx context.Context, locationID int) error
 
-	ListLocations(ctx context.Context) ([]*Location, error)
+	FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*Socket, error)
+	FindSocketByID(ctx context.Context, socketID int) (*Socket, error)
 }
-
-const (
-	SocketOn  = 1
-	SocketOff = 2
-)
 
 type Sentry interface{
-	CheckSockets(ctx context.Context, address, sommunity string, port int) ([]*Socket, error)
-	ToggleSocket(ctx context.Context, socketMIB, address, community string, port int) (*Socket, error)
-}
-
-type Watcher interface {
-	AddLocation(ctx context.Context, l Location) ([]*Location, error)
-	RemoveLocation(ctx context.Context, locationID int) ([]*Location, error)
-
-	AddSocket(ctx context.Context, s Socket, locationID int) ([]*Location, error)
-	RemoveSocket(ctx context.Context, socketID, locationID int) ([]*Location, error)
-
-	CheckAll(ctx context.Context) ([]*Location, error)
-	ToggleSocket(ctx context.Context, socketID, locationId int, onOrOff int) ([]*Location, error)
+	CheckSocket(ctx context.Context, mib, address, community string, port int) (*Socket, error)
+	ToggleSocket(ctx context.Context, turnOn bool, socketMIB, address, community string, port int) (*Socket, error)
 }
 
 type service struct {
-	w   Watcher
+	sentry   Sentry
 	repo Repository
 	log *zap.SugaredLogger
 }
 
-func NewService(w Watcher, l *zap.SugaredLogger, repo Repository) (Service, error) {
-	if w == nil || l == nil {
+func NewService(sentry Sentry, l *zap.SugaredLogger, repo Repository) (Service, error) {
+	if sentry == nil || l == nil {
 		return nil, errors.New("manager: arguments for NewService cannot be nil")
 	}
 	return &service{
-		w:   w,
+		sentry:   sentry,
 		log: l,
 		repo: repo,
 	}, nil
 }
 
-func (s *service) CheckAll(ctx context.Context) ([]*Location, error) {
+func (s *service) CheckAll(ctx context.Context, locationAddress string) ([]*Socket, error) {
 	defer s.log.Sync()
 	s.log.Info("Service: CheckAll()")
-	v, err := s.w.CheckAll(ctx)
+	sock, err := s.repo.FindSocketsByLocation(ctx, locationAddress)
 	if err != nil {
-		s.log.Errorf("Service: CheckAll() - error: %v", err)
+		s.log.Errorw("Service: CheckAll() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
-	return v, nil
+	return sock, nil
 }
 
-func (s *service) AddLocation(ctx context.Context, l Location) ([]*Location, error) {
-	defer s.log.Sync()
-	s.log.Info("Service: AddLocation()")
-	v, err := s.w.AddLocation(ctx, l)
-	if err != nil {
-		s.log.Errorf("Service: AddLocation() - error: %v", err)
-		return nil, err
-	}
-	return v, nil
-}
-
-func (s *service) RemoveLocation(ctx context.Context, locationID int) ([]*Location, error) {
-	defer s.log.Sync()
-	s.log.Info("Service: RemoveLocation()")
-	v, err := s.w.RemoveLocation(ctx, locationID)
-	if err != nil {
-		s.log.Errorf("Service: RemoveLocation() - error: %v", err)
-		return nil, err
-	}
-	return v, nil
-}
-
-func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) ([]*Location, error) {
+func (s *service) AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error) {
 	defer s.log.Sync()
 	s.log.Info("Service: AddSocket()")
-	v, err := s.w.AddSocket(ctx, socket, locationID)
+	socket.SNMPaddress=locationAddress
+	// TODO: add repo call
+	sock, err := s.repo.CreateSocket(ctx, socket)
 	if err != nil {
-		s.log.Error("Service: AddSocket() - error: %v", err)
 		return nil, err
 	}
-	return v, err
+	
+	return sock, nil
 }
 
-func (s *service) RemoveSocket(ctx context.Context, socketID, locationID int) ([]*Location, error) {
+func (s *service) RemoveSocket(ctx context.Context, socketID int) error {
 	defer s.log.Sync()
 	s.log.Info("Service: RemoveSocket()")
-	v, err := s.w.RemoveSocket(ctx, socketID, locationID)
-	if err != nil {
-		s.log.Error("Service: RemoveSocket() - error: %v", err)
-		return nil, err
+	if err := s.repo.DeleteSocket(ctx, socketID); err != nil {
+		s.log.Errorw("Service: RemoveSocket() - repo call", zap.String("error", err.Error()))
+		return  err
 	}
-	return v, err
+	return nil
 }
 
-func (s *service) ToggleSocket(ctx context.Context, socketID, locationId, onOrOff int) ([]*Location, error) {
+func (s *service) ToggleSocket(ctx context.Context, socketID int, onOrOff bool) error {
 	defer s.log.Sync()
 	s.log.Info("Service: ToggleSocket()")
-	v, err := s.w.ToggleSocket(ctx, socketID, locationId, onOrOff)
+	socket, err := s.repo.FindSocketByID(ctx, socketID)
 	if err != nil {
-		s.log.Error("Service: ToggleSocket() - error: %v", err)
-		return nil, err
+		s.log.Errorw("Service, ToggleSocket() - repo call", zap.String("error", err.Error()))
+		return err
 	}
-	return v, err
+	_, err = s.sentry.ToggleSocket(ctx,onOrOff, socket.SNMPmib, socket.SNMPaddress, socket.SNMPcommunity, socket.SNMPport)
+	if err != nil {
+		s.log.Errorw("Service, ToggleSocket() - sentry call", zap.String("error", err.Error()))
+		return err
+	}
+	return nil
 }

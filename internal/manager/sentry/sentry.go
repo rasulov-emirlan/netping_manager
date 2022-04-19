@@ -11,12 +11,20 @@ import (
 type Sentry struct {
 }
 
-func (s *Sentry) CheckSocket(ctx context.Context, mib, address, community string, port int) (*manager.Socket, error) {
+func connect(address, community string, port int) (*gosnmp.GoSNMP, error) {
 	g := *gosnmp.Default
 	g.Target = address
 	g.Community = community
 	g.Port = uint16(port)
 	if err := g.Connect(); err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
+func (s *Sentry) CheckSocket(ctx context.Context, mib, address, community string, port int) (*manager.Socket, error) {
+	g, err := connect(address, community, port)
+	if err != nil {
 		return nil, err
 	}
 	res, err := g.Get([]string{mib})
@@ -44,11 +52,8 @@ func (s *Sentry) CheckSocket(ctx context.Context, mib, address, community string
 }
 
 func (s *Sentry) CheckSockets(ctx context.Context, oids []string, address, community string, port int) ([]*manager.Socket, error) {
-	g := *gosnmp.Default
-	g.Target = address
-	g.Community = community
-	g.Port = uint16(port)
-	if err := g.Connect(); err != nil {
+	g, err := connect(address, community, port)
+	if err != nil {
 		return nil, err
 	}
 	res, err := g.Get(oids)
@@ -79,11 +84,8 @@ func (s *Sentry) CheckSockets(ctx context.Context, oids []string, address, commu
 }
 
 func (s *Sentry) ToggleSocket(ctx context.Context, turnOn bool, socketMIB, address, community string, port int) (*manager.Socket, error) {
-	g := *gosnmp.Default
-	g.Target = address
-	g.Community = community
-	g.Port = uint16(port)
-	if err := g.Connect(); err != nil {
+	g, err := connect(address, community, port)
+	if err != nil {
 		return nil, err
 	}
 	var turnOnOrOff int = 0
@@ -95,7 +97,7 @@ func (s *Sentry) ToggleSocket(ctx context.Context, turnOn bool, socketMIB, addre
 		Type: gosnmp.Integer,
 		Name: socketMIB,
 	}}
-	_, err := g.Set(input)
+	_, err = g.Set(input)
 	if err != nil {
 		return nil, err
 	}

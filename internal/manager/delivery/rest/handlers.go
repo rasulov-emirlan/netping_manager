@@ -23,6 +23,7 @@ func NewHandler(service manager.Service) (*handler, error) {
 }
 
 func (h *handler) Register(router *echo.Group) error {
+	router.GET("/info", h.getSocketTypes())
 	router.POST("/config/socket", h.addSocket())
 	router.DELETE("/config/socket/:id", h.removeSocket())
 	router.GET("/config/sockets", h.listSockets())
@@ -113,5 +114,22 @@ func (h *handler) listSockets() echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(http.StatusOK, v)
+	}
+}
+
+func (h *handler) getSocketTypes() echo.HandlerFunc {
+	type Response struct {
+		TypeID int `json:"typeID"`
+		TypeName string `jons:"name"`
+	}
+	return func(c echo.Context) error {
+		// TODO: change this code to an actual service call
+		resp := []*Response{
+			{TypeID: manager.TypeUnknown, TypeName: "unknown"},
+			{TypeID: manager.TypeGenerator, TypeName: "generator"},
+			{TypeID: manager.TypeAC, TypeName: "air conditioner"},
+			{TypeID: manager.TypeHeater, TypeName: "heater"},
+		}
+		return c.JSON(http.StatusOK, resp)
 	}
 }

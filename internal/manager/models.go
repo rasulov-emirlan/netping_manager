@@ -27,8 +27,12 @@ type Socket struct {
 	ObjectType int `json:"objectType"`
 }
 
+// This is just an example what object types might be
+// It is unlikely that you will use these constants
+// since in future you may add more types in your database
 const (
-	TypeAC = iota + 1
+	TypeUnknown = iota + 1
+	TypeAC
 	TypeHeater
 	TypeGenerator
 )

@@ -36,7 +36,7 @@ func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
 	// }
 	stry := sentry.Sentry{}
 	level := zap.NewAtomicLevelAt(zap.InfoLevel)
-	z, err := logger.NewZap("logs.log", false, level)
+	z, logCloser, err := logger.NewZap("logs.log", false, level)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,6 +59,9 @@ func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
 
 	close := func() error {
 		if err := dbConn.Close(); err != nil {
+			return err
+		}
+		if err := logCloser(); err != nil {
 			return err
 		}
 		return nil

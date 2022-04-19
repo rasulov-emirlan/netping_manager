@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
@@ -43,9 +44,17 @@ func (h *handler) setValue() echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+		go func () {
+			err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}()
+		select {
+		case <- time.After(5 * time.Second):
+			return c.JSON(http.StatusInternalServerError, "looks like we could not connect to netping")
+		case <- c.Request().Context().Done():
 		}
 		return c.NoContent(http.StatusOK)
 	}

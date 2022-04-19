@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type Registrator interface {
@@ -30,19 +31,11 @@ func NewServer(port string, tw, tr time.Duration, m Registrator) (*server, error
 }
 
 func (s *server) Start() error {
-	// s.router.POST("/config/location", addLocation(s.watcher))
-	// s.router.DELETE("/config/location", removeLocation(s.watcher))
-	// s.router.POST("/config/socket", addSocket(s.watcher))
-	// s.router.DELETE("/config/socket", removeSocket(s.watcher))
-
-	// s.router.POST("/control", setValue(s.watcher))
-	// s.router.GET("/control", getAll(s.watcher))
-
+	s.router.Use(middleware.CORS())
 	manager := s.router.Group("")
 	if err := s.managerRegistrator.Register(manager); err != nil {
 		return err
 	}
-
 	return s.router.Start(s.port)
 }
 

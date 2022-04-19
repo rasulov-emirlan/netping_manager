@@ -12,6 +12,8 @@ type Location struct {
 	Sockets []*Socket `json:"sockets"`
 }
 
+// Socket represents a machine like a heater or a generator
+// that is connected to netping
 type Socket struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`

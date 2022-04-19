@@ -12,7 +12,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewManager(cfg config.Config) (rest.Registrator, error) {
+type CloserFunc func() error
+
+func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
 	// l := []*manager.Location{{
 	// 	ID:            1,
 	// 	Name:          "Ошская станция",
@@ -36,23 +38,30 @@ func NewManager(cfg config.Config) (rest.Registrator, error) {
 	level := zap.NewAtomicLevelAt(zap.InfoLevel)
 	z, err := logger.NewZap("logs.log", true, level)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	dbConn, err := db.NewMySQL(cfg.Database)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	repo, err := mysql.NewRepository(dbConn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	s, err := manager.NewService(&stry, z, repo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	h, err := managerH.NewHandler(s)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return h, nil
+
+	close := func() error {
+		if err := dbConn.Close(); err != nil {
+			return err
+		}
+		return nil
+	}
+	return h, close, nil
 }

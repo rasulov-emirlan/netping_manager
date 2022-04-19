@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h, err := compositors.NewManager(*cfg)
+	h, close, err := compositors.NewManager(*cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,6 +44,9 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 	if err := server.Shutdown(context.TODO()); err != nil {
+		log.Fatal(err)
+	}
+	if err := close(); err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Gracefully shutting down :)")

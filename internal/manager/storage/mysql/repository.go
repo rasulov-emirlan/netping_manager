@@ -57,7 +57,7 @@ const findSocketsByLocationSQL = `
 `
 
 func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*manager.Socket, error) {
-	rows, err := r.conn.Query(findSocketByIDsql, locationAddress)
+	rows, err := r.conn.Query(findSocketsByLocationSQL, locationAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager
 }
 
 const listAllSocketsSQL = `
-	SELECT netping_address, id, name, mib_address, socket_type_id from sockets group by netping_address ORDER BY netping_address ASC;
+	SELECT netping_address, id, name, mib_address, socket_type_id from sockets;
 `
 
 func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {

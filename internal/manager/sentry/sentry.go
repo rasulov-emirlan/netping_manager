@@ -44,7 +44,7 @@ func (s *Sentry) CheckSocket(ctx context.Context, mib, address, community string
 		if !ok {
 			return nil, errors.New("sentry: incorrect value type")
 		}
-		if vv == 1 {
+		if vv == 0 {
 			ss.IsON = true
 		}
 	}
@@ -89,7 +89,7 @@ func (s *Sentry) ToggleSocket(ctx context.Context, turnOn bool, socketMIB, addre
 		return nil, err
 	}
 	var turnOnOrOff int = 0
-	if turnOn {
+	if !turnOn {
 		turnOnOrOff = 1
 	}
 	input := []gosnmp.SnmpPDU{{

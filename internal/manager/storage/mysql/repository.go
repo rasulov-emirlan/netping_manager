@@ -36,12 +36,12 @@ func (r *repository) CreateSocket(ctx context.Context, s manager.Socket) (*manag
 }
 
 const updateSocketSQL = `
-	UPDATE sockets SET name = ?, mib_addre	ss = ?, netping_address = ?, socket_type_id = ?
+	UPDATE sockets SET name = ?, mib_address = ?, socket_type_id = ?
 		WHERE id = ?;
 `
 
 func (r *repository) UpdateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
-	return &s, r.conn.QueryRow(updateSocketSQL, s.Name, s.SNMPmib, s.SNMPaddress, s.ObjectType, s.ID).Err()
+	return &s, r.conn.QueryRow(updateSocketSQL, s.Name, s.SNMPmib, s.ObjectType, s.ID).Err()
 }
 
 const deleteSocketSQL = `
@@ -52,41 +52,47 @@ func (r *repository) DeleteSocket(ctx context.Context, socketID int) error {
 	return r.conn.QueryRow(deleteSocketSQL, socketID).Err()
 }
 
-const findSocketsByLocationSQL = `
-	SELECT id, name, mib_address, socket_type_id FROM sockets WHERE netping_address = ?;
+const findSocketsByLocationIDSQL = `
+	SELECT s.id, s.name, nl.host, s.mib_address, s.socket_type_id 
+		FROM sockets AS s
+	INNER JOIN netping_list AS nl
+		ON s.netping_id = nl.id
+	WHERE s.netping_id = ?;
 `
 
-func (r *repository) FindSocketsByLocation(ctx context.Context, locationAddress string) ([]*manager.Socket, error) {
-	rows, err := r.conn.Query(findSocketsByLocationSQL, locationAddress)
+func (r *repository) FindSocketsByLocationID(ctx context.Context, locationID int) ([]*manager.Socket, error) {
+	rows, err := r.conn.Query(findSocketsByLocationIDSQL, locationID)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		sockets []*manager.Socket
-		id, socketType int
-		name, mibAddress string
+		sockets                          []*manager.Socket
+		id, socketType                   int
+		name, mibAddress, netpingAddress string
 	)
 
 	for rows.Next() {
 		if err := rows.Scan(
-			&id, &name, &mibAddress, &socketType,
+			&id, &name, &netpingAddress, &mibAddress, &socketType,
 		); err != nil {
 			return nil, err
 		}
 		sockets = append(sockets, &manager.Socket{
-			ID: id,
-			Name: name,
-			SNMPaddress: locationAddress,
-			SNMPmib: mibAddress,
-			ObjectType: socketType,
+			ID:          id,
+			Name:        name,
+			SNMPaddress: netpingAddress,
+			SNMPmib:     mibAddress,
+			ObjectType:  socketType,
 		})
 	}
 	return sockets, nil
 }
 
 const findSocketByIDsql = `
-	SELECT name, mib_address, netping_address, socket_type_id FROM sockets WHERE id = ?;
+	SELECT s.name, s.mib_address, nl.host, s.socket_type_id FROM sockets AS s
+	INNER JOIN netping_list AS nl
+	ON nl.id = s.netping_id WHERE s.id = ?;
 `
 
 func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager.Socket, error) {
@@ -98,7 +104,10 @@ func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager
 }
 
 const listAllSocketsSQL = `
-	SELECT netping_address, id, name, mib_address, socket_type_id from sockets;
+	SELECT nl.id, s.id, nl.name, s.name, nl.host, s.mib_address, s.socket_type_id 
+	FROM sockets AS s
+	INNER JOIN netping_list AS nl
+	ON s.netping_id = nl.id;
 `
 
 func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {
@@ -108,38 +117,44 @@ func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, e
 	}
 
 	var (
-		locationsMap = make(map[string][]*manager.Socket)
-		netpingAddress, name, mibAddress string
-		id, socketType int
+		locationsMap = make(map[string]manager.Location)
+		socketsMap   = make(map[string][]*manager.Socket)
+
+		netpingAddress, lname, sname, mibAddress string
+		sid, lid, socketType                     int
 	)
 
 	for rows.Next() {
 		if err := rows.Scan(
-			&netpingAddress,
-			&id,
-			&name,
-			&mibAddress,
-			&socketType,
+			&lid, &sid, &lname, &sname, &netpingAddress, &mibAddress, &socketType,
 		); err != nil {
 			return nil, err
 		}
-		locationsMap[netpingAddress] = append(locationsMap[netpingAddress], &manager.Socket{
-			ID: id,
-			Name: name,
-			SNMPaddress: netpingAddress,
-			SNMPmib: mibAddress,
+		locationsMap[netpingAddress] = manager.Location{
+			ID:            lid,
+			Name:          lname,
+			SNMPaddress:   netpingAddress,
+			SNMPport:      161,
+			SNMPcommunity: "SWITCH",
+			Sockets:       []*manager.Socket{},
+		}
+		socketsMap[netpingAddress] = append(socketsMap[netpingAddress], &manager.Socket{
+			ID:            sid,
+			Name:          sname,
+			SNMPmib:       mibAddress,
+			ObjectType:    socketType,
+			SNMPaddress:   netpingAddress,
+			SNMPport:      161,
+			SNMPcommunity: "SWITCH",
 		})
 	}
 
 	locations := make([]*manager.Location, len(locationsMap))
 	index := 0
-	for i, v := range locationsMap {
-		locations[index] = &manager.Location{
-			SNMPaddress: i,
-			Sockets: v,
-		}
+	for _, v := range locationsMap {
+		v.Sockets = socketsMap[v.SNMPaddress]
+		locations[index] = &v
 		index++
 	}
-
 	return locations, nil
 }

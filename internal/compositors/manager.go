@@ -32,7 +32,11 @@ func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
 	// }}
 	// w, err := watcher.NewWatcher(l)
 	// if err != nil {
-	// 	return nil, err
+	// 	return nil, nil, err
+	// }
+	// _, err = w.ToggleSocket(context.TODO(), 1, 1, 1)
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
 	stry := sentry.Sentry{}
 	level := zap.NewAtomicLevelAt(zap.InfoLevel)

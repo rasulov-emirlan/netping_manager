@@ -25,13 +25,13 @@ func NewRepository(conn *sql.DB) (*repository, error) {
 
 const createSocketSQL = `
 	INSERT INTO sockets (
-		name, mib_address, netping_address, socket_type_id
+		name, mib_address, netping_id, socket_type_id
 	)
 	VALUES( ?, ?, ?, ? );
 `
 
-func (r *repository) CreateSocket(ctx context.Context, s manager.Socket) (*manager.Socket, error) {
-	err := r.conn.QueryRow(createSocketSQL, s.Name, s.SNMPmib, s.SNMPaddress, s.ObjectType).Scan(&s.ID)
+func (r *repository) CreateSocket(ctx context.Context, s manager.Socket, locationID int) (*manager.Socket, error) {
+	err := r.conn.QueryRow(createSocketSQL, s.Name, s.SNMPmib, locationID, s.ObjectType).Err()
 	return &s, err
 }
 

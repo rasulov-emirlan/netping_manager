@@ -1,5 +1,11 @@
 DB_URL='mysql://mysql:root@tcp(localhost:3306)/netping_manager'
 
+# ENV stands for file which contains configs with sensitive data
+ENV=.env
+
+run:
+	go run cmd/apiserver/main.go ${ENV}
+
 migrate_create:
 	migrate create -ext sql -dir ./migrations -seq ${TABLE_NAME}
 

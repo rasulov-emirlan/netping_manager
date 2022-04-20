@@ -23,7 +23,7 @@ func NewHandler(service manager.Service) (*handler, error) {
 }
 
 func (h *handler) Register(router *echo.Group) error {
-	router.GET("/info", h.getSocketTypes())
+	router.GET("/config/socket/type", h.getSocketTypes())
 	router.POST("/config/socket", h.addSocket())
 	router.PATCH("/config/socket/:id", h.updateSocket())
 	router.DELETE("/config/socket/:id", h.removeSocket())
@@ -73,7 +73,7 @@ func (h *handler) getAll() echo.HandlerFunc {
 
 func (h *handler) addSocket() echo.HandlerFunc {
 	type Request struct {
-		LocationAddress string `json:"locationAddress"`
+		Location 		int	   `json:"locationID"`
 		SocketName      string `json:"socketName"`
 		SocketMIB       string `json:"socketMIB"`
 		SocketType      int    `json:"socketType"`
@@ -87,7 +87,7 @@ func (h *handler) addSocket() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, "Incorrect socket type")
 		}
 		s := toServiceSocket(req.SocketName, req.SocketMIB, req.SocketType)
-		v, err := h.service.AddSocket(c.Request().Context(), s, req.LocationAddress)
+		v, err := h.service.AddSocket(c.Request().Context(), s, req.Location)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}

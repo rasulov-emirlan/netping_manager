@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error)
+	AddSocket(ctx context.Context, socket Socket, locationID int) (*Socket, error)
 	UpdateSocket(ctx context.Context, socket Socket, socketID int) (*Socket, error)
 	ListAllSockets(ctx context.Context) ([]*Location, error)
 	RemoveSocket(ctx context.Context, socketID int) error
@@ -18,7 +18,7 @@ type Service interface {
 }
 
 type Repository interface {
-	CreateSocket(ctx context.Context, s Socket) (*Socket, error)
+	CreateSocket(ctx context.Context, s Socket, locationdID int) (*Socket, error)
 	UpdateSocket(ctx context.Context, s Socket) (*Socket, error)
 	DeleteSocket(ctx context.Context, socketID int) error
 
@@ -78,11 +78,10 @@ func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
 	return l, nil
 }
 
-func (s *service) AddSocket(ctx context.Context, socket Socket, locationAddress string) (*Socket, error) {
+func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) (*Socket, error) {
 	defer s.log.Sync()
 	s.log.Info("Service: AddSocket()")
-	socket.SNMPaddress = locationAddress
-	sock, err := s.repo.CreateSocket(ctx, socket)
+	sock, err := s.repo.CreateSocket(ctx, socket, locationID)
 	if err != nil {
 		return nil, err
 	}

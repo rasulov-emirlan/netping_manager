@@ -73,10 +73,10 @@ func (h *handler) getAll() echo.HandlerFunc {
 
 func (h *handler) addSocket() echo.HandlerFunc {
 	type Request struct {
-		Location 		int	   `json:"locationID"`
-		SocketName      string `json:"socketName"`
-		SocketMIB       string `json:"socketMIB"`
-		SocketType      int    `json:"socketType"`
+		Location   int    `json:"locationID"`
+		SocketName string `json:"socketName"`
+		SocketMIB  string `json:"socketMIB"`
+		SocketType int    `json:"socketType"`
 	}
 	return func(c echo.Context) error {
 		req := &Request{}

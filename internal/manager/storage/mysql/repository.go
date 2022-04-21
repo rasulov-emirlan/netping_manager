@@ -104,10 +104,11 @@ func (r *repository) FindSocketByID(ctx context.Context, socketID int) (*manager
 }
 
 const listAllSocketsSQL = `
-	SELECT nl.id, s.id, nl.name, s.name, nl.host, s.mib_address, s.socket_type_id 
-	FROM sockets AS s
-	INNER JOIN netping_list AS nl
-	ON s.netping_id = nl.id;
+	SELECT nl.id, COALESCE(s.id, 0), nl.name, COALESCE(s.name, ''), nl.host, COALESCE(s.mib_address, ''), COALESCE(s.socket_type_id, 1) 
+	FROM netping_list AS nl
+	LEFT JOIN sockets AS s
+	ON s.netping_id = nl.id
+	ORDER BY nl.id DESC;
 `
 
 func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {
@@ -117,8 +118,7 @@ func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, e
 	}
 
 	var (
-		locationsMap = make(map[string]manager.Location)
-		socketsMap   = make(map[string][]*manager.Socket)
+		locationsMap = make(map[string]*manager.Location)
 
 		netpingAddress, lname, sname, mibAddress string
 		sid, lid, socketType                     int
@@ -130,30 +130,33 @@ func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, e
 		); err != nil {
 			return nil, err
 		}
-		locationsMap[netpingAddress] = manager.Location{
-			ID:            lid,
-			Name:          lname,
-			SNMPaddress:   netpingAddress,
-			SNMPport:      161,
-			SNMPcommunity: "SWITCH",
-			Sockets:       []*manager.Socket{},
+		if _, ok := locationsMap[netpingAddress]; !ok {
+			locationsMap[netpingAddress] = &manager.Location{
+				ID:            lid,
+				Name:          lname,
+				SNMPaddress:   netpingAddress,
+				SNMPcommunity: "SWITCH",
+				SNMPport:      161,
+			}
+			continue
 		}
-		socketsMap[netpingAddress] = append(socketsMap[netpingAddress], &manager.Socket{
-			ID:            sid,
-			Name:          sname,
-			SNMPmib:       mibAddress,
-			ObjectType:    socketType,
-			SNMPaddress:   netpingAddress,
-			SNMPport:      161,
-			SNMPcommunity: "SWITCH",
-		})
+		if sid != 0 {
+
+			locationsMap[netpingAddress].Sockets = append(locationsMap[netpingAddress].Sockets,
+				&manager.Socket{
+					ID:            sid,
+					Name:          sname,
+					SNMPaddress:   netpingAddress,
+					SNMPcommunity: "SWITCH",
+					SNMPport:      161,
+				})
+		}
 	}
 
 	locations := make([]*manager.Location, len(locationsMap))
 	index := 0
 	for _, v := range locationsMap {
-		v.Sockets = socketsMap[v.SNMPaddress]
-		locations[index] = &v
+		locations[index] = v
 		index++
 	}
 	return locations, nil

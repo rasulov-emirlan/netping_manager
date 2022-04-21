@@ -30,7 +30,7 @@ CREATE TABLE `netping_list` (
 
 CREATE TABLE socket_types (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
 INSERT INTO socket_types (name)

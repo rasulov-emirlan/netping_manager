@@ -107,8 +107,7 @@ const listAllSocketsSQL = `
 	SELECT nl.id, COALESCE(s.id, 0), nl.name, COALESCE(s.name, ''), nl.host, COALESCE(s.mib_address, ''), COALESCE(s.socket_type_id, 1) 
 	FROM netping_list AS nl
 	LEFT JOIN sockets AS s
-	ON s.netping_id = nl.id
-	ORDER BY nl.id DESC;
+	ON s.netping_id = nl.id;
 `
 
 func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, error) {
@@ -130,25 +129,25 @@ func (r *repository) ListAllSockets(ctx context.Context) ([]*manager.Location, e
 		); err != nil {
 			return nil, err
 		}
-		if _, ok := locationsMap[netpingAddress]; !ok {
-			locationsMap[netpingAddress] = &manager.Location{
+		if _, ok := locationsMap[lname]; !ok {
+			locationsMap[lname] = &manager.Location{
 				ID:            lid,
 				Name:          lname,
 				SNMPaddress:   netpingAddress,
 				SNMPcommunity: "SWITCH",
 				SNMPport:      161,
 			}
-			continue
 		}
 		if sid != 0 {
-
-			locationsMap[netpingAddress].Sockets = append(locationsMap[netpingAddress].Sockets,
+			locationsMap[lname].Sockets = append(locationsMap[lname].Sockets,
 				&manager.Socket{
 					ID:            sid,
 					Name:          sname,
 					SNMPaddress:   netpingAddress,
 					SNMPcommunity: "SWITCH",
 					SNMPport:      161,
+					SNMPmib:       mibAddress,
+					ObjectType:    socketType,
 				})
 		}
 	}

@@ -81,8 +81,20 @@ func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
 func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) (*Socket, error) {
 	defer s.log.Sync()
 	s.log.Info("Service: AddSocket()")
+	socks, err := s.repo.FindSocketsByLocationID(ctx, locationID)
+	if err != nil {
+		s.log.Errorw("Service: AddSocket() - repo call", zap.String("error", err.Error()))
+		return nil, err
+	}
+	for _, v := range socks {
+		if v.SNMPmib == socket.SNMPmib {
+			s.log.Infow("Service: AddSocket() - tried to use mib adress that is already in use by this location")
+			return nil, errors.New("manager: dublicate mib address")
+		}
+	}
 	sock, err := s.repo.CreateSocket(ctx, socket, locationID)
 	if err != nil {
+		s.log.Errorw("Service: AddSocket() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
 

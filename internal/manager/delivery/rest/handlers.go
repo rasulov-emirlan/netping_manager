@@ -83,7 +83,7 @@ func (h *handler) addSocket() echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		if req.SocketType < 1 || req.SocketType > 3 {
+		if req.SocketType < 1 || req.SocketType > 4 {
 			return c.JSON(http.StatusBadRequest, "Incorrect socket type")
 		}
 		s := toServiceSocket(req.SocketName, req.SocketMIB, req.SocketType)

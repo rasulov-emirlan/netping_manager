@@ -28,7 +28,7 @@ type Repository interface {
 }
 
 type Sentry interface {
-	CheckSocket(ctx context.Context, mib, address, community string, port int) (*Socket, error)
+	CheckSocket(ctx context.Context, mib []string, address, community string, port int) ([]bool, error)
 	ToggleSocket(ctx context.Context, turnOn bool, socketMIB, address, community string, port int) (*Socket, error)
 }
 
@@ -57,12 +57,17 @@ func (s *service) CheckAll(ctx context.Context, locationID int) ([]*Socket, erro
 		s.log.Errorw("Service: CheckAll() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
+	oids := []string{}
+	for _, v := range sock {
+		oids = append(oids, v.SNMPmib)
+	}
+	checks, err := s.sentry.CheckSocket(ctx, oids, sock[0].SNMPaddress, "SWITCH", 161)
+	if err != nil {
+		s.log.Errorw("Service: CheckAll() - sentry call", zap.String("error", err.Error()))
+		return nil, err
+	}
 	for i, v := range sock {
-		vv, err := s.sentry.CheckSocket(ctx, v.SNMPmib, v.SNMPaddress, "SWITCH", 161)
-		if err != nil {
-			return nil, err
-		}
-		sock[i].IsON = vv.IsON
+		v.IsON = checks[i]
 	}
 	return sock, nil
 }

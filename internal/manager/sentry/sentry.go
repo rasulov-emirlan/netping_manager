@@ -3,6 +3,7 @@ package sentry
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/gosnmp/gosnmp"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
@@ -22,33 +23,33 @@ func connect(address, community string, port int) (*gosnmp.GoSNMP, error) {
 	return &g, nil
 }
 
-func (s *Sentry) CheckSocket(ctx context.Context, mib, address, community string, port int) (*manager.Socket, error) {
+// TODO: not sure if this function should incapsulate some logic from
+// buisness logic. It would speed up our buisness logic if we incapsulated it
+// But it does not look too good
+func (s *Sentry) CheckSocket(ctx context.Context, mib []string, address, community string, port int) ([]bool, error) {
 	g, err := connect(address, community, port)
 	if err != nil {
 		return nil, err
 	}
-	res, err := g.Get([]string{mib})
+	res, err := g.Get(mib)
 	if err != nil {
 		return nil, err
 	}
-	ss := &manager.Socket{
-			IsON: false,
-			SNMPaddress: address,
-			SNMPcommunity: community,
-			SNMPport: port,
-			SNMPmib: mib,
-	}
+	checks := []bool{}
 
 	for _, v := range res.Variables {
-		vv, ok := v.Value.(int)
+		result, ok := v.Value.(int)
 		if !ok {
 			return nil, errors.New("sentry: incorrect value type")
 		}
-		if vv == 0 {
-			ss.IsON = true
+		if result == 0 {
+			checks = append(checks, true)
+			continue
 		}
+		checks = append(checks, false)
 	}
-	return ss, nil
+	log.Println(checks)
+	return checks, nil
 }
 
 func (s *Sentry) CheckSockets(ctx context.Context, oids []string, address, community string, port int) ([]*manager.Socket, error) {
@@ -65,11 +66,11 @@ func (s *Sentry) CheckSockets(ctx context.Context, oids []string, address, commu
 	)
 	for i, v := range res.Variables {
 		ss := &manager.Socket{
-			IsON: false,
-			SNMPaddress: address,
+			IsON:          false,
+			SNMPaddress:   address,
 			SNMPcommunity: community,
-			SNMPport: port,
-			SNMPmib: oids[i],
+			SNMPport:      port,
+			SNMPmib:       oids[i],
 		}
 		vv, ok := v.Value.(int)
 		if !ok {
@@ -94,18 +95,18 @@ func (s *Sentry) ToggleSocket(ctx context.Context, turnOn bool, socketMIB, addre
 	}
 	input := []gosnmp.SnmpPDU{{
 		Value: turnOnOrOff,
-		Type: gosnmp.Integer,
-		Name: socketMIB,
+		Type:  gosnmp.Integer,
+		Name:  socketMIB,
 	}}
 	_, err = g.Set(input)
 	if err != nil {
 		return nil, err
 	}
 	return &manager.Socket{
-		SNMPaddress: address,
-		SNMPport: port,
+		SNMPaddress:   address,
+		SNMPport:      port,
 		SNMPcommunity: community,
-		SNMPmib: socketMIB,
-		IsON: turnOn,
+		SNMPmib:       socketMIB,
+		IsON:          turnOn,
 	}, nil
 }

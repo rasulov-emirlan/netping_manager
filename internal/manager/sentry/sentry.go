@@ -3,7 +3,6 @@ package sentry
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/gosnmp/gosnmp"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
@@ -48,7 +47,6 @@ func (s *Sentry) CheckSocket(ctx context.Context, mib []string, address, communi
 		}
 		checks = append(checks, false)
 	}
-	log.Println(checks)
 	return checks, nil
 }
 

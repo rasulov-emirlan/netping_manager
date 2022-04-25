@@ -45,3 +45,10 @@ CREATE TABLE sockets (
     FOREIGN KEY (socket_type_id) REFERENCES socket_types(id),
     FOREIGN KEY (netping_id) REFERENCES netping_list(id)
 );
+
+CREATE TABLE netping_manager_users (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    password VARCHAR(265) NOT NULL,
+    is_admin BOOL DEFAULT false
+);

@@ -32,7 +32,7 @@ func NewServer(port string, tw, tr time.Duration, m Registrator) (*server, error
 
 func (s *server) Start() error {
 	s.router.Use(middleware.CORS())
-	manager := s.router.Group("")
+	manager := s.router.Group("/api")
 	if err := s.managerRegistrator.Register(manager); err != nil {
 		return err
 	}

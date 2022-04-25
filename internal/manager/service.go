@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"go.uber.org/zap"
 )
@@ -61,6 +62,9 @@ func (s *service) CheckAll(ctx context.Context, locationID int) ([]*Socket, erro
 	for _, v := range sock {
 		oids = append(oids, v.SNMPmib)
 	}
+	if len(sock) == 0 {
+		return nil, errors.New("manager: no sockets")
+	}
 	checks, err := s.sentry.CheckSocket(ctx, oids, sock[0].SNMPaddress, "SWITCH", 161)
 	if err != nil {
 		s.log.Errorw("Service: CheckAll() - sentry call", zap.String("error", err.Error()))
@@ -80,6 +84,9 @@ func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
 		s.log.Errorw("Service: ListAllSockets()", zap.String("error", err.Error()))
 		return nil, err
 	}
+	sort.Slice(l, func(i, j int) bool {
+		return l[i].ID < l[j].ID
+	})
 	return l, nil
 }
 

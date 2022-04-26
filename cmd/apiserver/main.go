@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,9 @@ import (
 
 	"github.com/rasulov-emirlan/netping-manager/internal/delivery/rest"
 )
+
+//go:embed dist
+var website embed.FS
 
 func main() {
 	var cfg *config.Config
@@ -30,7 +34,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	server, err := rest.NewServer(cfg.Server.Port, cfg.Server.TimeoutWrite, cfg.Server.TimeoutRead, h)
+	server, err := rest.NewServer(cfg.Server.Port, &website, cfg.Server.TimeoutWrite, cfg.Server.TimeoutRead, h)
 	if err != nil {
 		log.Fatal(err)
 	}

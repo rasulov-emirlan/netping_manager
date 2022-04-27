@@ -1,20 +1,18 @@
 package compositors
 
 import (
+	"database/sql"
+
 	"github.com/rasulov-emirlan/netping-manager/config"
 	"github.com/rasulov-emirlan/netping-manager/internal/delivery/rest"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
 	managerH "github.com/rasulov-emirlan/netping-manager/internal/manager/delivery/rest"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager/sentry"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager/storage/mysql"
-	"github.com/rasulov-emirlan/netping-manager/pkg/db"
-	"github.com/rasulov-emirlan/netping-manager/pkg/logger"
 	"go.uber.org/zap"
 )
 
-type CloserFunc func() error
-
-func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
+func NewManager(cfg config.Config, logger *zap.SugaredLogger, dbConn *sql.DB) (rest.Registrator, error) {
 	// l := []*manager.Location{{
 	// 	ID:            1,
 	// 	Name:          "Ошская станция",
@@ -39,36 +37,17 @@ func NewManager(cfg config.Config) (rest.Registrator, CloserFunc, error) {
 	// 	log.Fatal(err)
 	// }
 	stry := sentry.Sentry{}
-	level := zap.NewAtomicLevelAt(zap.InfoLevel)
-	z, logCloser, err := logger.NewZap("logs.log", false, level)
-	if err != nil {
-		return nil, nil, err
-	}
-	dbConn, err := db.NewMySQL(cfg.Database)
-	if err != nil {
-		return nil, nil, err
-	}
 	repo, err := mysql.NewRepository(dbConn)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	s, err := manager.NewService(&stry, z, repo)
+	s, err := manager.NewService(&stry, logger, repo)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	h, err := managerH.NewHandler(s)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-
-	close := func() error {
-		if err := dbConn.Close(); err != nil {
-			return err
-		}
-		if err := logCloser(); err != nil {
-			return err
-		}
-		return nil
-	}
-	return h, close, nil
+	return h, nil
 }

@@ -48,7 +48,10 @@ CREATE TABLE sockets (
 
 CREATE TABLE netping_manager_users (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    password VARCHAR(265) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
     is_admin BOOL DEFAULT false
 );
+
+INSERT INTO netping_manager_users(name, password, is_admin)
+    VALUES('admin', 'button_lord', true);

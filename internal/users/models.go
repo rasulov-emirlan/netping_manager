@@ -1,0 +1,25 @@
+package users
+
+import (
+	"time"
+)
+
+type User struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Password string `json:"-"`
+
+	IsAdmin bool `json:""`
+
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func NewUser(name, password string) (User, error) {
+	user := User{
+		Name:     name,
+		Password: password,
+		IsAdmin:  false,
+	}
+	return user, nil
+}

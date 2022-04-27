@@ -30,6 +30,7 @@ func (s *Sentry) CheckSocket(ctx context.Context, mib []string, address, communi
 	if err != nil {
 		return nil, err
 	}
+	defer g.Conn.Close()
 	res, err := g.Get(mib)
 	if err != nil {
 		return nil, err
@@ -55,6 +56,7 @@ func (s *Sentry) CheckSockets(ctx context.Context, oids []string, address, commu
 	if err != nil {
 		return nil, err
 	}
+	defer g.Conn.Close()
 	res, err := g.Get(oids)
 	if err != nil {
 		return nil, err
@@ -87,6 +89,7 @@ func (s *Sentry) ToggleSocket(ctx context.Context, turnOn bool, socketMIB, addre
 	if err != nil {
 		return nil, err
 	}
+	defer g.Conn.Close()
 	var turnOnOrOff int = 0
 	if !turnOn {
 		turnOnOrOff = 1

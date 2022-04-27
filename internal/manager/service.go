@@ -41,7 +41,7 @@ type service struct {
 
 func NewService(sentry Sentry, l *zap.SugaredLogger, repo Repository) (Service, error) {
 	if sentry == nil || l == nil {
-		return nil, errors.New("manager: arguments for NewService cannot be nil")
+		return nil, errors.New("manager: arguments for ManagerNewService cannot be nil")
 	}
 	return &service{
 		sentry: sentry,
@@ -52,10 +52,10 @@ func NewService(sentry Sentry, l *zap.SugaredLogger, repo Repository) (Service, 
 
 func (s *service) CheckAll(ctx context.Context, locationID int) ([]*Socket, error) {
 	defer s.log.Sync()
-	s.log.Info("Service: CheckAll()")
+	s.log.Info("ManagerService: CheckAll()")
 	sock, err := s.repo.FindSocketsByLocationID(ctx, locationID)
 	if err != nil {
-		s.log.Errorw("Service: CheckAll() - repo call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: CheckAll() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
 	oids := []string{}
@@ -67,7 +67,7 @@ func (s *service) CheckAll(ctx context.Context, locationID int) ([]*Socket, erro
 	}
 	checks, err := s.sentry.CheckSocket(ctx, oids, sock[0].SNMPaddress, "SWITCH", 161)
 	if err != nil {
-		s.log.Errorw("Service: CheckAll() - sentry call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: CheckAll() - sentry call", zap.String("error", err.Error()))
 		return nil, err
 	}
 	for i, v := range sock {
@@ -78,10 +78,10 @@ func (s *service) CheckAll(ctx context.Context, locationID int) ([]*Socket, erro
 
 func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
 	defer s.log.Sync()
-	s.log.Info("Service: ListAllSockets()")
+	s.log.Info("ManagerService: ListAllSockets()")
 	l, err := s.repo.ListAllSockets(ctx)
 	if err != nil {
-		s.log.Errorw("Service: ListAllSockets()", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: ListAllSockets()", zap.String("error", err.Error()))
 		return nil, err
 	}
 	sort.Slice(l, func(i, j int) bool {
@@ -92,21 +92,21 @@ func (s *service) ListAllSockets(ctx context.Context) ([]*Location, error) {
 
 func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) (*Socket, error) {
 	defer s.log.Sync()
-	s.log.Info("Service: AddSocket()")
+	s.log.Info("ManagerService: AddSocket()")
 	socks, err := s.repo.FindSocketsByLocationID(ctx, locationID)
 	if err != nil {
-		s.log.Errorw("Service: AddSocket() - repo call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: AddSocket() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
 	for _, v := range socks {
 		if v.SNMPmib == socket.SNMPmib {
-			s.log.Infow("Service: AddSocket() - tried to use mib adress that is already in use by this location")
+			s.log.Infow("ManagerService: AddSocket() - tried to use mib adress that is already in use by this location")
 			return nil, errors.New("manager: dublicate mib address")
 		}
 	}
 	sock, err := s.repo.CreateSocket(ctx, socket, locationID)
 	if err != nil {
-		s.log.Errorw("Service: AddSocket() - repo call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: AddSocket() - repo call", zap.String("error", err.Error()))
 		return nil, err
 	}
 
@@ -115,9 +115,9 @@ func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) 
 
 func (s *service) RemoveSocket(ctx context.Context, socketID int) error {
 	defer s.log.Sync()
-	s.log.Info("Service: RemoveSocket()")
+	s.log.Info("ManagerService: RemoveSocket()")
 	if err := s.repo.DeleteSocket(ctx, socketID); err != nil {
-		s.log.Errorw("Service: RemoveSocket() - repo call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: RemoveSocket() - repo call", zap.String("error", err.Error()))
 		return err
 	}
 	return nil
@@ -125,17 +125,17 @@ func (s *service) RemoveSocket(ctx context.Context, socketID int) error {
 
 func (s *service) ToggleSocket(ctx context.Context, socketID int, onOrOff bool) error {
 	defer s.log.Sync()
-	s.log.Info("Service: ToggleSocket()")
+	s.log.Info("ManagerService: ToggleSocket()")
 	socket, err := s.repo.FindSocketByID(ctx, socketID)
 	if err != nil {
-		s.log.Errorw("Service, ToggleSocket() - repo call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService, ToggleSocket() - repo call", zap.String("error", err.Error()))
 		return err
 	}
 	socket.SNMPcommunity = "SWITCH"
 	socket.SNMPport = 161
 	_, err = s.sentry.ToggleSocket(ctx, onOrOff, socket.SNMPmib, socket.SNMPaddress, socket.SNMPcommunity, socket.SNMPport)
 	if err != nil {
-		s.log.Errorw("Service, ToggleSocket() - sentry call", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService, ToggleSocket() - sentry call", zap.String("error", err.Error()))
 		return err
 	}
 	return nil
@@ -143,12 +143,12 @@ func (s *service) ToggleSocket(ctx context.Context, socketID int, onOrOff bool) 
 
 func (s *service) UpdateSocket(ctx context.Context, socket Socket, socketID int) (*Socket, error) {
 	defer s.log.Sync()
-	s.log.Info("Service: UpdateSocket()")
+	s.log.Info("ManagerService: UpdateSocket()")
 	socket.ID = socketID
 	// TODO: add some updates in repositories
 	sock, err := s.repo.UpdateSocket(ctx, socket)
 	if err != nil {
-		s.log.Errorw("Service: UpdateSocket()", zap.String("error", err.Error()))
+		s.log.Errorw("ManagerService: UpdateSocket()", zap.String("error", err.Error()))
 		return nil, err
 	}
 	return sock, err

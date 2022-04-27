@@ -20,9 +20,10 @@ type server struct {
 
 	websiteFS          *embed.FS
 	managerRegistrator Registrator
+	usersRegistrator   Registrator
 }
 
-func NewServer(port string, websiteFS *embed.FS, tw, tr time.Duration, m Registrator) (*server, error) {
+func NewServer(port string, websiteFS *embed.FS, tw, tr time.Duration, m, u Registrator) (*server, error) {
 	e := echo.New()
 	e.Server.ReadTimeout = tr
 	e.Server.WriteTimeout = tw
@@ -30,6 +31,7 @@ func NewServer(port string, websiteFS *embed.FS, tw, tr time.Duration, m Registr
 		router:             e,
 		port:               port,
 		managerRegistrator: m,
+		usersRegistrator:   u,
 		websiteFS:          websiteFS,
 	}, nil
 }
@@ -43,8 +45,11 @@ func (s *server) Start() error {
 		Browse:     true,
 		Filesystem: http.FS(echo.MustSubFS(s.websiteFS, "dist")),
 	}))
-	manager := s.router.Group("/api")
-	if err := s.managerRegistrator.Register(manager); err != nil {
+	api := s.router.Group("/api")
+	if err := s.managerRegistrator.Register(api); err != nil {
+		return err
+	}
+	if err := s.usersRegistrator.Register(api); err != nil {
 		return err
 	}
 	return s.router.Start("0.0.0.0:8080")

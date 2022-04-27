@@ -13,10 +13,12 @@ type (
 		Port         string
 		TimeoutRead  time.Duration
 		TimeoutWrite time.Duration
+		JWTkey       []byte
 	}
 	Config struct {
-		Server   server
-		Database string
+		Server      server
+		Database    string
+		LogFilename string
 	}
 )
 
@@ -24,8 +26,11 @@ const (
 	serverPort         = "SERVER_PORT"
 	serverTimeoutRead  = "SERVER_TIMEOUT_READ"
 	serverTimeoutWrite = "SERVER_TIMEOUT_WRITE"
+	serverJWTkey       = "SERVER_JWT_key"
 
 	databaseURL = "DATABASE_URL"
+
+	logFileName = "LOG_NAME"
 )
 
 var (
@@ -52,15 +57,20 @@ func NewConfig(filenames ...string) (*Config, error) {
 			Port:         os.Getenv(serverPort),
 			TimeoutRead:  tR,
 			TimeoutWrite: tW,
+			JWTkey:       []byte(os.Getenv(serverJWTkey)),
 		},
-		Database: os.Getenv(databaseURL),
+		Database:    os.Getenv(databaseURL),
+		LogFilename: os.Getenv(logFileName),
 	}
-	if cfg.Server.Port == "" {
+	if cfg.Server.Port == "" || len(cfg.Server.JWTkey) == 0 {
 		return nil, ErrNoServerData
 	}
 	cfg.Server.Port = ":" + cfg.Server.Port
 	if cfg.Database == "" {
 		return nil, ErrNoDatabaseData
+	}
+	if cfg.LogFilename == "" {
+		cfg.LogFilename = "logs.log"
 	}
 	return &cfg, nil
 }

@@ -45,7 +45,7 @@ func NewManager(cfg config.Config, logger *zap.SugaredLogger, dbConn *sql.DB) (r
 	if err != nil {
 		return nil, err
 	}
-	h, err := managerH.NewHandler(s)
+	h, err := managerH.NewHandler(s, cfg.Server.JWTkey, logger)
 	if err != nil {
 		return nil, err
 	}

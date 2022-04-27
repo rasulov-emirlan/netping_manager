@@ -63,7 +63,8 @@ func (r *repository) Read(ctx context.Context, userID int) (users.User, error) {
 
 const readByNameSQL = `
 	SELECT id, password, is_admin
-	FROM netping_manager_users;
+	FROM netping_manager_users
+		WHERE name = ?;
 `
 
 func (r *repository) ReadByName(ctx context.Context, name string) (users.User, error) {

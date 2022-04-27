@@ -7,13 +7,17 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
+	usersHelpers "github.com/rasulov-emirlan/netping-manager/internal/users/delivery/rest"
+	"go.uber.org/zap"
 )
 
 type handler struct {
 	service manager.Service
+	log     *zap.SugaredLogger
+	jwtkey  []byte
 }
 
-func NewHandler(service manager.Service) (*handler, error) {
+func NewHandler(service manager.Service, jwkey []byte, logger *zap.SugaredLogger) (*handler, error) {
 	if service == nil {
 		return nil, errors.New("manager: delivery: service can't be nil")
 	}
@@ -40,14 +44,21 @@ func (h *handler) setValue() echo.HandlerFunc {
 		TurnOn bool `json:"turnON"`
 	}
 	return func(c echo.Context) error {
+		defer h.log.Sync()
+		claims, err := usersHelpers.GetToken(c, h.jwtkey)
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, err.Error())
+		}
+		h.log.Infow("Trying to toggle a socket", zap.Int("userid", claims.UserID))
 		req := &Request{}
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
+		err = h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
+		h.log.Infow("Toggled a socket", zap.Int("userid", claims.UserID))
 		return c.NoContent(http.StatusOK)
 	}
 }

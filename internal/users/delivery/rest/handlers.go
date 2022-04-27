@@ -13,6 +13,12 @@ import (
 
 const jwtTokenExpirationTime = time.Hour
 
+type Claims struct {
+	UserID  int  `json:"userId"`
+	IsAdmin bool `json:"isAdmin"`
+	jwt.StandardClaims
+}
+
 type handler struct {
 	service users.Service
 	jwtKey  []byte
@@ -40,11 +46,6 @@ func (h *handler) login() echo.HandlerFunc {
 	type Request struct {
 		Name     string `json:"username"`
 		Password string `json:"password"`
-	}
-	type Claims struct {
-		UserID  int  `json:"userId"`
-		IsAdmin bool `json:"isAdmin"`
-		jwt.StandardClaims
 	}
 	type Response struct {
 		AccessToken string `json:"accessToken"`

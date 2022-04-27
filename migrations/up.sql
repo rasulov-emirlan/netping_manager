@@ -50,7 +50,9 @@ CREATE TABLE netping_manager_users (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
-    is_admin BOOL DEFAULT false
+    is_admin BOOL DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
 INSERT INTO netping_manager_users(name, password, is_admin)

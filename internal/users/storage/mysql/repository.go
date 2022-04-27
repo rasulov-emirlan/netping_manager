@@ -24,17 +24,27 @@ func NewRepository(conn *sql.DB) (*repository, error) {
 const createSQL = `
 	INSERT INTO netping_manager_users(name, password, is_admin)
 		VALUES(?, ?, ?);
-	SELECT LAST_INSERT_ID();
+`
+
+const createGetIdSQL = `
+	SELECT id, created_at
+	FROM netping_manager_users
+		WHERE name = ?;
 `
 
 func (r *repository) Create(ctx context.Context, name, password string, isAdmin bool) (users.User, error) {
-	var id int
-	err := r.conn.QueryRow(createSQL, name, password, isAdmin).Scan(&id)
-	return users.User{
-		ID:       id,
+	u := users.User{
 		Name:     name,
 		Password: password,
-	}, err
+		IsAdmin:  isAdmin,
+	}
+	if err := r.conn.QueryRow(createSQL, name, password, isAdmin).Err(); err != nil {
+		return u, err
+	}
+	if err := r.conn.QueryRow(createGetIdSQL, name).Scan(&u.ID, &u.CreatedAt); err != nil {
+		return u, err
+	}
+	return u, nil
 }
 
 const readSQL = `

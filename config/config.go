@@ -26,7 +26,7 @@ const (
 	serverPort         = "SERVER_PORT"
 	serverTimeoutRead  = "SERVER_TIMEOUT_READ"
 	serverTimeoutWrite = "SERVER_TIMEOUT_WRITE"
-	serverJWTkey       = "SERVER_JWT_key"
+	serverJWTkey       = "SERVER_JWT_KEY"
 
 	databaseURL = "DATABASE_URL"
 

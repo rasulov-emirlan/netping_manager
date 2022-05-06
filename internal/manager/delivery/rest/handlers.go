@@ -33,9 +33,6 @@ func NewHandler(service manager.Service, jwkey []byte, logger *zap.SugaredLogger
 
 func (h *handler) Register(router *echo.Group) error {
 	router.GET("/config/socket/type", h.getSocketTypes())
-
-	log.Println(h.jwtkey)
-
 	router.POST("/config/socket", h.addSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.PATCH("/config/socket/:id", h.updateSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.DELETE("/config/socket/:id", h.removeSocket(), usersHelpers.CheckRole(h.jwtkey, true))
@@ -55,7 +52,6 @@ func (h *handler) setValue() echo.HandlerFunc {
 		defer h.log.Sync()
 		claims, ok := c.Get(usersHelpers.UserInfoFromContext).(*usersHelpers.Claims)
 		if !ok {
-			log.Println("could not decode jwt")
 			return c.NoContent(http.StatusBadRequest)
 		}
 		h.log.Infow("Trying to toggle a socket", zap.Int("userid", claims.UserID))

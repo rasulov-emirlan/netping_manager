@@ -2,7 +2,6 @@ package rest
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,9 +35,9 @@ func NewHandler(s users.Service, jwtKey []byte) (*handler, error) {
 }
 
 func (h *handler) Register(router *echo.Group) error {
-	router.GET("/config/users", h.getUsers())
-	router.POST("/config/users", h.registerUser())
-	router.DELETE("/config/users/:id", h.deleteUser())
+	router.GET("/config/users", h.getUsers(), CheckRole(h.jwtKey, true))
+	router.POST("/config/users", h.registerUser(), CheckRole(h.jwtKey, true))
+	router.DELETE("/config/users/:id", h.deleteUser(), CheckRole(h.jwtKey, true))
 	router.POST("/config/users/login", h.login())
 	router.POST("/config/users/logout", h.logout())
 	return nil
@@ -95,7 +94,6 @@ func (h *handler) login() echo.HandlerFunc {
 			Expires:  expTime,
 			HttpOnly: true,
 		})
-		log.Println(token)
 		return c.JSON(http.StatusOK, Response{AccessToken: tokenString})
 	}
 }

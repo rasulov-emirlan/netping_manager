@@ -76,7 +76,7 @@ func (r *repository) ReadByName(ctx context.Context, name string) (users.User, e
 }
 
 const readAllsql = `
-	SELECT name, password, is_admin
+	SELECT id, name, password, is_admin
 	FROM netping_manager_users;
 `
 

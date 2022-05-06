@@ -2,6 +2,7 @@ package rest
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,7 +12,7 @@ import (
 	"github.com/rasulov-emirlan/netping-manager/internal/users"
 )
 
-const jwtTokenExpirationTime = time.Hour
+const jwtTokenExpirationTime = time.Hour * 8
 
 type Claims struct {
 	UserID  int  `json:"userId"`
@@ -35,11 +36,22 @@ func NewHandler(s users.Service, jwtKey []byte) (*handler, error) {
 }
 
 func (h *handler) Register(router *echo.Group) error {
+	router.GET("/config/users", h.getUsers())
 	router.POST("/config/users", h.registerUser())
 	router.DELETE("/config/users/:id", h.deleteUser())
 	router.POST("/config/users/login", h.login())
 	router.POST("/config/users/logout", h.logout())
 	return nil
+}
+
+func (h *handler) getUsers() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		u, err := h.service.ReadAll(c.Request().Context())
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(http.StatusOK, u)
+	}
 }
 
 func (h *handler) login() echo.HandlerFunc {
@@ -62,26 +74,28 @@ func (h *handler) login() echo.HandlerFunc {
 		if u.Password != req.Password {
 			return c.NoContent(http.StatusUnauthorized)
 		}
+
 		expTime := time.Now().Add(jwtTokenExpirationTime)
-		claims := Claims{
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{
 			UserID:  u.ID,
 			IsAdmin: u.IsAdmin,
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: expTime.Unix(),
 			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		})
 		tokenString, err := token.SignedString(h.jwtKey)
 		if err != nil {
 			return c.NoContent(http.StatusInternalServerError)
 		}
+
 		c.SetCookie(&http.Cookie{
 			Name:     "AccessToken",
 			Value:    tokenString,
 			Expires:  expTime,
 			HttpOnly: true,
 		})
+		log.Println(token)
 		return c.JSON(http.StatusOK, Response{AccessToken: tokenString})
 	}
 }

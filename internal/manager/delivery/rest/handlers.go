@@ -2,12 +2,15 @@ package rest
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rasulov-emirlan/netping-manager/internal/manager"
+
 	usersHelpers "github.com/rasulov-emirlan/netping-manager/internal/users/delivery/rest"
+
 	"go.uber.org/zap"
 )
 
@@ -23,15 +26,20 @@ func NewHandler(service manager.Service, jwkey []byte, logger *zap.SugaredLogger
 	}
 	return &handler{
 		service: service,
+		log:     logger,
+		jwtkey:  jwkey,
 	}, nil
 }
 
 func (h *handler) Register(router *echo.Group) error {
 	router.GET("/config/socket/type", h.getSocketTypes())
-	router.POST("/config/socket", h.addSocket())
-	router.PATCH("/config/socket/:id", h.updateSocket())
-	router.DELETE("/config/socket/:id", h.removeSocket())
-	router.GET("/config/sockets", h.listSockets())
+
+	log.Println(h.jwtkey)
+
+	router.POST("/config/socket", h.addSocket(), usersHelpers.CheckRole(h.jwtkey, true))
+	router.PATCH("/config/socket/:id", h.updateSocket(), usersHelpers.CheckRole(h.jwtkey, true))
+	router.DELETE("/config/socket/:id", h.removeSocket(), usersHelpers.CheckRole(h.jwtkey, true))
+	router.GET("/config/sockets", h.listSockets(), usersHelpers.CheckRole(h.jwtkey, true))
 
 	router.POST("/control", h.setValue())
 	router.GET("/control/:id", h.getAll())
@@ -45,16 +53,17 @@ func (h *handler) setValue() echo.HandlerFunc {
 	}
 	return func(c echo.Context) error {
 		defer h.log.Sync()
-		claims, err := usersHelpers.GetToken(c, h.jwtkey)
-		if err != nil {
-			return c.JSON(http.StatusUnauthorized, err.Error())
+		claims, ok := c.Get(usersHelpers.UserInfoFromContext).(*usersHelpers.Claims)
+		if !ok {
+			log.Println("could not decode jwt")
+			return c.NoContent(http.StatusBadRequest)
 		}
 		h.log.Infow("Trying to toggle a socket", zap.Int("userid", claims.UserID))
 		req := &Request{}
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		err = h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
+		err := h.service.ToggleSocket(c.Request().Context(), req.Socket, req.TurnOn)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())
 		}
@@ -126,6 +135,14 @@ func (h *handler) removeSocket() echo.HandlerFunc {
 
 func (h *handler) listSockets() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		defer h.log.Sync()
+		claims, ok := c.Get(usersHelpers.UserInfoFromContext).(*usersHelpers.Claims)
+		if !ok {
+			log.Println("could not decode jwt")
+			return c.NoContent(http.StatusBadRequest)
+		}
+		h.log.Infow("Trying to toggle a socket", zap.Int("userid", claims.UserID))
+
 		v, err := h.service.ListAllSockets(c.Request().Context())
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())

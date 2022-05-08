@@ -17,9 +17,10 @@ type User struct {
 
 func NewUser(name, password string) (User, error) {
 	user := User{
-		Name:     name,
-		Password: password,
-		IsAdmin:  false,
+		Name:      name,
+		Password:  password,
+		IsAdmin:   false,
+		CreatedAt: time.Now(),
 	}
 	return user, nil
 }

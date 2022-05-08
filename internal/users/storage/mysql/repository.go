@@ -86,24 +86,14 @@ func (r *repository) ReadAll(ctx context.Context) ([]users.User, error) {
 		return nil, err
 	}
 
-	var (
-		u        []users.User
-		id       int
-		name     string
-		password string
-		isAdmin  bool
-	)
+	var u []users.User
 
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &password, &isAdmin); err != nil {
+		t := users.User{}
+		if err := rows.Scan(&t.ID, &t.Name, &t.Password, &t.IsAdmin); err != nil {
 			return nil, err
 		}
-		u = append(u, users.User{
-			ID:       id,
-			Name:     name,
-			Password: password,
-			IsAdmin:  isAdmin,
-		})
+		u = append(u, t)
 	}
 	return u, nil
 }

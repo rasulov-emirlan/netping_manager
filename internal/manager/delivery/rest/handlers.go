@@ -2,7 +2,6 @@ package rest
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -36,7 +35,7 @@ func (h *handler) Register(router *echo.Group) error {
 	router.POST("/config/socket", h.addSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.PATCH("/config/socket/:id", h.updateSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.DELETE("/config/socket/:id", h.removeSocket(), usersHelpers.CheckRole(h.jwtkey, true))
-	router.GET("/config/sockets", h.listSockets(), usersHelpers.CheckRole(h.jwtkey, true))
+	router.GET("/config/sockets", h.listSockets())
 
 	router.POST("/control", h.setValue())
 	router.GET("/control/:id", h.getAll())
@@ -131,14 +130,6 @@ func (h *handler) removeSocket() echo.HandlerFunc {
 
 func (h *handler) listSockets() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		defer h.log.Sync()
-		claims, ok := c.Get(usersHelpers.UserInfoFromContext).(*usersHelpers.Claims)
-		if !ok {
-			log.Println("could not decode jwt")
-			return c.NoContent(http.StatusBadRequest)
-		}
-		h.log.Infow("Trying to toggle a socket", zap.Int("userid", claims.UserID))
-
 		v, err := h.service.ListAllSockets(c.Request().Context())
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, err.Error())

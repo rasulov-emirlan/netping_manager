@@ -98,6 +98,17 @@ func (r *repository) ReadAll(ctx context.Context) ([]users.User, error) {
 	return u, nil
 }
 
+const updateSQL = `
+	UPDATE netping_manager_users
+	SET name = $1, password = $2, is_admin = $3
+	WHERE id = $4;
+`
+
+func (r *repository) Update(ctx context.Context, userID int, changeset users.User) error {
+	_, err := r.conn.ExecContext(ctx, updateSQL, changeset.Name, changeset.Password, changeset.IsAdmin, userID)
+	return err
+}
+
 const deleteSQL = `
 	DELETE FROM netping_manager_users
 		WHERE id = ?;

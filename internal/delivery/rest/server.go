@@ -52,7 +52,7 @@ func (s *server) Start() error {
 	if err := s.usersRegistrator.Register(api); err != nil {
 		return err
 	}
-	return s.router.Start(":8080")
+	return s.router.Start(s.port)
 }
 
 func (s *server) Shutdown(ctx context.Context) error {

@@ -40,7 +40,7 @@ func (h *handler) Register(router *echo.Group) error {
 	router.POST("/control", h.setValue())
 	router.GET("/control/:id", h.getAll())
 	return nil
-}
+} 
 
 func (h *handler) setValue() echo.HandlerFunc {
 	type Request struct {

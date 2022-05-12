@@ -30,6 +30,26 @@ func GetToken(accessToken string, jwtkey []byte) (*Claims, error) {
 	return nil, errors.New("users: Invalid Access Token")
 }
 
+func GetRefresh(refreshToken string, jwtkey []byte) (*RefreshClaims, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &RefreshClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return jwtkey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*RefreshClaims)
+	if ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("users: Invalid Refresh Token")
+}
+
 const UserInfoFromContext = "userinfo"
 
 func CheckRole(jwtKey []byte, isAdmin bool) echo.MiddlewareFunc {

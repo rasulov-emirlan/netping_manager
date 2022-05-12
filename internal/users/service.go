@@ -11,6 +11,7 @@ type Service interface {
 	Read(ctx context.Context, userID int) (User, error)
 	ReadByName(ctx context.Context, name string) (User, error)
 	ReadAll(ctx context.Context) ([]User, error)
+	Update(ctx context.Context, userID int, changeset User) error
 	Delete(ctx context.Context, userID int) error
 }
 
@@ -19,6 +20,7 @@ type Repository interface {
 	Read(ctx context.Context, userID int) (User, error)
 	ReadByName(ctx context.Context, name string) (User, error)
 	ReadAll(ctx context.Context) ([]User, error)
+	Update(ctx context.Context, userID int, changeset User) error
 	Delete(ctx context.Context, userID int) error
 }
 
@@ -76,6 +78,16 @@ func (s *service) ReadAll(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return u, err
+}
+
+func (s *service) Update(ctx context.Context, userID int, changeset User) error {
+	defer s.log.Sync()
+	s.log.Info("UserService: Update()")
+	if err := s.repo.Update(ctx, userID, changeset); err != nil {
+		s.log.Errorw("UserService: Update() - repo call", zap.String("error", err.Error()))
+		return err
+	}
+	return nil
 }
 
 func (s *service) Delete(ctx context.Context, userID int) error {

@@ -37,7 +37,14 @@ func NewServer(port string, websiteFS *embed.FS, tw, tr time.Duration, m, u Regi
 }
 
 func (s *server) Start() error {
-	s.router.Use(middleware.CORS())
+	s.router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		// This application will not be used outside of inner network
+		// so we can allow all origins
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"},
+		// We will have to save some cookies so we have to allow credentials
+		AllowCredentials: true,
+	}))
 	s.router.Group("/website").Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Index:      "index.html",
 		HTML5:      true,

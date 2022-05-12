@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/rasulov-emirlan/netping-manager/internal/users"
 )
@@ -100,12 +101,12 @@ func (r *repository) ReadAll(ctx context.Context) ([]users.User, error) {
 
 const updateSQL = `
 	UPDATE netping_manager_users
-	SET name = $1, password = $2, is_admin = $3
-	WHERE id = $4;
+	SET name = ?, password = ?, is_admin = ?, updated_at = ?
+	WHERE id = ?;
 `
 
 func (r *repository) Update(ctx context.Context, userID int, changeset users.User) error {
-	_, err := r.conn.ExecContext(ctx, updateSQL, changeset.Name, changeset.Password, changeset.IsAdmin, userID)
+	_, err := r.conn.ExecContext(ctx, updateSQL, changeset.Name, changeset.Password, changeset.IsAdmin, time.Now(), userID)
 	return err
 }
 

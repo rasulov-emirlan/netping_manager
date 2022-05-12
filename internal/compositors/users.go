@@ -20,6 +20,6 @@ func NewUsers(cfg *config.Config, logger *zap.SugaredLogger, dbConn *sql.DB) (re
 	if err != nil {
 		return nil, err
 	}
-	h, err := usersH.NewHandler(s, cfg.Server.JWTkey, logger)
+	h, err := usersH.NewHandler(s, cfg.Server.JWTkey, logger, cfg.Server.CookieDomain)
 	return h, err
 }

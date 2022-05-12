@@ -2,6 +2,7 @@ package rest
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,19 +31,21 @@ type RefreshClaims struct {
 }
 
 type handler struct {
-	service users.Service
-	log     *zap.SugaredLogger
-	jwtKey  []byte
+	service      users.Service
+	log          *zap.SugaredLogger
+	jwtKey       []byte
+	cookieDomain string
 }
 
-func NewHandler(s users.Service, jwtKey []byte, log *zap.SugaredLogger) (*handler, error) {
+func NewHandler(s users.Service, jwtKey []byte, log *zap.SugaredLogger, cookieDomain string) (*handler, error) {
 	if s == nil {
 		return nil, errors.New("users: delivery: rest: service cannot be nil")
 	}
 	return &handler{
-		service: s,
-		jwtKey:  jwtKey,
-		log:     log,
+		service:      s,
+		jwtKey:       jwtKey,
+		log:          log,
+		cookieDomain: cookieDomain,
 	}, nil
 }
 
@@ -76,9 +79,6 @@ func (h *handler) refresh() echo.HandlerFunc {
 		// We validate that user has a cookie with our refresh token
 		cookie, err := c.Cookie(refreshCookieName)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, err.Error())
-		}
-		if err := cookie.Valid(); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
 		claims, err := GetRefresh(cookie.Value, h.jwtKey)
@@ -166,9 +166,12 @@ func (h *handler) login() echo.HandlerFunc {
 		c.SetCookie(&http.Cookie{
 			Name:     refreshCookieName,
 			Value:    refreshString,
-			Expires:  expTime,
+			Domain:   h.cookieDomain,
+			Path:     "/",
+			Expires:  refreshTime,
 			HttpOnly: true,
 		})
+		log.Println(refreshTime)
 		return c.JSON(http.StatusOK, Response{AccessToken: tokenString, RefreshToken: refreshString})
 	}
 }
@@ -178,6 +181,8 @@ func (h *handler) logout() echo.HandlerFunc {
 		c.SetCookie(&http.Cookie{
 			Name:     refreshCookieName,
 			Value:    "",
+			Domain:   h.cookieDomain,
+			Path:     "/",
 			Expires:  time.Now(),
 			HttpOnly: true,
 		})
@@ -209,7 +214,7 @@ func (h *handler) registerUser() echo.HandlerFunc {
 
 func (h *handler) update() echo.HandlerFunc {
 	type Request struct {
-		Name     string `json:"name"`
+		Name     string `json:"username"`
 		Passwrod string `json:"password"`
 		IsAdmin  bool   `json:"isAdmin"`
 	}

@@ -33,19 +33,14 @@ const createGetIdSQL = `
 		WHERE name = ?;
 `
 
-func (r *repository) Create(ctx context.Context, name, password string, isAdmin bool) (users.User, error) {
-	u := users.User{
-		Name:     name,
-		Password: password,
-		IsAdmin:  isAdmin,
+func (r *repository) Create(ctx context.Context, u users.User) (int, error) {
+	if err := r.conn.QueryRow(createSQL, u.Name, u.Password, u.IsAdmin).Err(); err != nil {
+		return 0, err
 	}
-	if err := r.conn.QueryRow(createSQL, name, password, isAdmin).Err(); err != nil {
-		return u, err
+	if err := r.conn.QueryRow(createGetIdSQL, u.Name).Scan(&u.ID, &u.CreatedAt); err != nil {
+		return 0, err
 	}
-	if err := r.conn.QueryRow(createGetIdSQL, name).Scan(&u.ID, &u.CreatedAt); err != nil {
-		return u, err
-	}
-	return u, nil
+	return u.ID, nil
 }
 
 const readSQL = `
@@ -101,13 +96,22 @@ func (r *repository) ReadAll(ctx context.Context) ([]users.User, error) {
 
 const updateSQL = `
 	UPDATE netping_manager_users
-	SET name = ?, password = ?, is_admin = ?, updated_at = ?
-	WHERE id = ?;
+	SET name = ?, is_admin = ?, updated_at = ?
 `
 
 func (r *repository) Update(ctx context.Context, userID int, changeset users.User) error {
-	_, err := r.conn.ExecContext(ctx, updateSQL, changeset.Name, changeset.Password, changeset.IsAdmin, time.Now(), userID)
-	return err
+	switch changeset.Password {
+	case "":
+		sql := updateSQL + `
+		WHERE id = ?`
+		_, err := r.conn.ExecContext(ctx, sql, changeset.Name, changeset.IsAdmin, time.Now(), userID)
+		return err
+	default:
+		sql := updateSQL + `, password = ?
+		WHERE id = ?`
+		_, err := r.conn.ExecContext(ctx, sql, changeset.Name, changeset.IsAdmin, time.Now(), changeset.Password, userID)
+		return err
+	}
 }
 
 const deleteSQL = `

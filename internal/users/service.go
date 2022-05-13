@@ -16,7 +16,7 @@ type Service interface {
 }
 
 type Repository interface {
-	Create(ctx context.Context, name, password string, isAdmin bool) (User, error)
+	Create(ctx context.Context, user User) (id int, err error)
 	Read(ctx context.Context, userID int) (User, error)
 	ReadByName(ctx context.Context, name string) (User, error)
 	ReadAll(ctx context.Context) ([]User, error)
@@ -39,7 +39,12 @@ func NewService(repo Repository, log *zap.SugaredLogger) (Service, error) {
 func (s *service) Create(ctx context.Context, name, password string, isAdmin bool) (User, error) {
 	defer s.log.Sync()
 	s.log.Info("UserService: Create()")
-	u, err := s.repo.Create(ctx, name, password, isAdmin)
+	u, err := NewUser(name, password)
+	if err != nil {
+		return User{}, err
+	}
+	u.IsAdmin = isAdmin
+	u.ID, err = s.repo.Create(ctx, u)
 	if err != nil {
 		s.log.Errorw("UserService: Create() - repo call", zap.String("error", err.Error()))
 		return User{}, err

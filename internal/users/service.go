@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 
 	"go.uber.org/zap"
 )
@@ -13,6 +14,8 @@ type Service interface {
 	ReadAll(ctx context.Context) ([]User, error)
 	Update(ctx context.Context, userID int, changeset User) error
 	Delete(ctx context.Context, userID int) error
+
+	Login(ctx context.Context, name, password string) (User, error)
 }
 
 type Repository interface {
@@ -103,4 +106,17 @@ func (s *service) Delete(ctx context.Context, userID int) error {
 		return err
 	}
 	return nil
+}
+
+func (s *service) Login(ctx context.Context, name, password string) (User, error) {
+	defer s.log.Sync()
+	u, err := s.repo.ReadByName(ctx, name)
+	if err != nil {
+		s.log.Errorw("UserService: Login() - repo call", zap.Error(err))
+		return User{}, err
+	}
+	if !u.ComparePasswords(password) {
+		return User{}, errors.New("users: not authorized")
+	}
+	return u, nil
 }

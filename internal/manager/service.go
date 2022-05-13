@@ -9,6 +9,8 @@ import (
 )
 
 type Service interface {
+	// Probably this code
+	// could be faster without pointers XP
 	AddSocket(ctx context.Context, socket Socket, locationID int) (*Socket, error)
 	UpdateSocket(ctx context.Context, socket Socket, socketID int) (*Socket, error)
 	ListAllSockets(ctx context.Context) ([]*Location, error)

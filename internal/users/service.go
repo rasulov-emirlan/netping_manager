@@ -88,9 +88,21 @@ func (s *service) ReadAll(ctx context.Context) ([]User, error) {
 	return u, err
 }
 
+// Even though update accepts a struct User, it expects that password in it
+// will be either empty or not hashed.
+// If password is empty it will not update the password
+// If password is given it will hash it first and then update
 func (s *service) Update(ctx context.Context, userID int, changeset User) error {
 	defer s.log.Sync()
 	s.log.Info("UserService: Update()")
+	if changeset.Password != "" {
+		psw, err := HashePassword(changeset.Password)
+		if err != nil {
+			s.log.Errorw("UserService: Update() - hashing password", zap.String("error", err.Error()))
+			return err
+		}
+		changeset.Password = string(psw)
+	}
 	if err := s.repo.Update(ctx, userID, changeset); err != nil {
 		s.log.Errorw("UserService: Update() - repo call", zap.String("error", err.Error()))
 		return err

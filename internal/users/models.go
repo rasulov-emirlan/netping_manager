@@ -46,3 +46,7 @@ func (u *User)ComparePasswords(password string) bool {
 		return true
 	}
 }
+
+func HashePassword(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), hashCost)
+}

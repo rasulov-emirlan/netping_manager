@@ -14,7 +14,6 @@ type (
 		TimeoutRead  time.Duration
 		TimeoutWrite time.Duration
 		JWTkey       []byte
-		CookieDomain string
 	}
 	Config struct {
 		Server      server
@@ -28,7 +27,6 @@ const (
 	serverTimeoutRead  = "SERVER_TIMEOUT_READ"
 	serverTimeoutWrite = "SERVER_TIMEOUT_WRITE"
 	serverJWTkey       = "SERVER_JWT_KEY"
-	serverCookieDomain = "SERVER_COOKIE_DOMAIN"
 
 	databaseURL = "DATABASE_URL"
 
@@ -60,12 +58,11 @@ func NewConfig(filenames ...string) (*Config, error) {
 			TimeoutRead:  tR,
 			TimeoutWrite: tW,
 			JWTkey:       []byte(os.Getenv(serverJWTkey)),
-			CookieDomain: os.Getenv(serverCookieDomain),
 		},
 		Database:    os.Getenv(databaseURL),
 		LogFilename: os.Getenv(logFileName),
 	}
-	if len(cfg.Server.JWTkey) == 0 || cfg.Server.CookieDomain == "" {
+	if len(cfg.Server.JWTkey) == 0 {
 		return nil, ErrNoServerData
 	}
 	if cfg.Server.Port == "" {

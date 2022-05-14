@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 
 	"go.uber.org/zap"
 )
@@ -127,8 +126,8 @@ func (s *service) Login(ctx context.Context, name, password string) (User, error
 		s.log.Errorw("UserService: Login() - repo call", zap.Error(err))
 		return User{}, err
 	}
-	if !u.ComparePasswords(password) {
-		return User{}, errors.New("users: not authorized")
+	if err := u.ComparePasswords(password); err != nil {
+		return User{}, err
 	}
 	return u, nil
 }

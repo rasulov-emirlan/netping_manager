@@ -2,7 +2,6 @@ package rest
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,10 +33,9 @@ type handler struct {
 	service      users.Service
 	log          *zap.SugaredLogger
 	jwtKey       []byte
-	cookieDomain string
 }
 
-func NewHandler(s users.Service, jwtKey []byte, log *zap.SugaredLogger, cookieDomain string) (*handler, error) {
+func NewHandler(s users.Service, jwtKey []byte, log *zap.SugaredLogger) (*handler, error) {
 	if s == nil {
 		return nil, errors.New("users: delivery: rest: service cannot be nil")
 	}
@@ -45,7 +43,6 @@ func NewHandler(s users.Service, jwtKey []byte, log *zap.SugaredLogger, cookieDo
 		service:      s,
 		jwtKey:       jwtKey,
 		log:          log,
-		cookieDomain: cookieDomain,
 	}, nil
 }
 
@@ -128,11 +125,8 @@ func (h *handler) login() echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			return c.JSON(http.StatusBadRequest, err.Error())
 		}
-		u, err := h.service.ReadByName(c.Request().Context(), req.Name)
+		u, err := h.service.Login(c.Request().Context(), req.Name, req.Password)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
-		if u.Password != req.Password {
 			return c.NoContent(http.StatusUnauthorized)
 		}
 
@@ -166,12 +160,9 @@ func (h *handler) login() echo.HandlerFunc {
 		c.SetCookie(&http.Cookie{
 			Name:     refreshCookieName,
 			Value:    refreshString,
-			Domain:   h.cookieDomain,
-			Path:     "/",
 			Expires:  refreshTime,
 			HttpOnly: true,
 		})
-		log.Println(refreshTime)
 		return c.JSON(http.StatusOK, Response{AccessToken: tokenString, RefreshToken: refreshString})
 	}
 }
@@ -181,8 +172,6 @@ func (h *handler) logout() echo.HandlerFunc {
 		c.SetCookie(&http.Cookie{
 			Name:     refreshCookieName,
 			Value:    "",
-			Domain:   h.cookieDomain,
-			Path:     "/",
 			Expires:  time.Now(),
 			HttpOnly: true,
 		})

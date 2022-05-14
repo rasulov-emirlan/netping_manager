@@ -38,13 +38,8 @@ func NewUser(name, password string) (User, error) {
 	return user, nil
 }
 
-func (u *User)ComparePasswords(password string) bool {
-	switch bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) {
-	case nil:
-		return false
-	default:
-		return true
-	}
+func (u *User)ComparePasswords(password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
 }
 
 func HashePassword(password string) ([]byte, error) {

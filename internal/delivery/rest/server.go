@@ -45,13 +45,16 @@ func (s *server) Start() error {
 		// We will have to save some cookies so we have to allow credentials
 		AllowCredentials: true,
 	}))
+
 	s.router.Group("/website").Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		// This middleware is for serving SPA websites
 		Index:      "index.html",
 		HTML5:      true,
 		IgnoreBase: false,
 		Browse:     true,
 		Filesystem: http.FS(echo.MustSubFS(s.websiteFS, "dist")),
 	}))
+	
 	api := s.router.Group("/api")
 	if err := s.managerRegistrator.Register(api); err != nil {
 		return err

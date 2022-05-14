@@ -5,6 +5,10 @@ type Location struct {
 	Name         string `json:"name"`
 	RealLocation string `json:"realLocation"`
 
+	// Info about snmp addresses and ports is gonna be
+	// in every socket
+	// But we are gonna have it here just in case we will
+	// want to get a location without any sockets
 	SNMPaddress   string `json:"snmpAddress"`
 	SNMPport      int    `json:"snmpPort"`
 	SNMPcommunity string `json:"snmpCommunity"`

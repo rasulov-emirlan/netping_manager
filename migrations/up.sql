@@ -1,3 +1,7 @@
+-- These migrations could not be automated
+-- since this application will use already existing db
+-- this file is here just to make stuff more clear
+
 CREATE TABLE `netping_list` (
   `id` int NOT NULL,
   `firmware_id` int NOT NULL,
@@ -12,21 +16,6 @@ CREATE TABLE `netping_list` (
   `devices` text,
   `request` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
--- ALTER TABLE `netping_list`
---   ADD PRIMARY KEY (`id`);
-
--- --
--- -- AUTO_INCREMENT для сохранённых таблиц
--- --
-
--- --
--- -- AUTO_INCREMENT для таблицы `netping_list`
--- --
--- ALTER TABLE `netping_list`
---   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
--- COMMIT;
-
 
 CREATE TABLE socket_types (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

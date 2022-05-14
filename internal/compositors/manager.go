@@ -13,6 +13,7 @@ import (
 )
 
 func NewManager(cfg config.Config, logger *zap.SugaredLogger, dbConn *sql.DB) (rest.Registrator, error) {
+	// Sentry is a netping manager
 	stry := sentry.Sentry{}
 	repo, err := mysql.NewRepository(dbConn)
 	if err != nil {

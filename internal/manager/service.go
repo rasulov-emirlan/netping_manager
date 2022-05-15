@@ -102,7 +102,7 @@ func (s *service) AddSocket(ctx context.Context, socket Socket, locationID int) 
 	}
 	for _, v := range socks {
 		if v.SNMPmib == socket.SNMPmib {
-			s.log.Infow("ManagerService: AddSocket() - tried to use mib adress that is already in use by this location")
+			s.log.Infow("ManagerService: AddSocket() - tryied to use mib address that is already in use by this location")
 			return nil, errors.New("manager: dublicate mib address")
 		}
 	}

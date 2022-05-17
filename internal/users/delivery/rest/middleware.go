@@ -75,8 +75,12 @@ func CheckRole(jwtKey []byte, isAdmin bool) echo.MiddlewareFunc {
 				return c.NoContent(http.StatusUnauthorized)
 			}
 
-			if claims.IsAdmin != isAdmin {
-				return c.NoContent(http.StatusUnauthorized)
+			switch isAdmin {
+			case true:
+				if !claims.IsAdmin {
+					return c.NoContent(http.StatusUnauthorized)
+				}
+			case false:
 			}
 
 			c.Set(UserInfoFromContext, claims)

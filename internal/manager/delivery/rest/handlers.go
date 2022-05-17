@@ -35,10 +35,10 @@ func (h *handler) Register(router *echo.Group) error {
 	router.POST("/config/socket", h.addSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.PATCH("/config/socket/:id", h.updateSocket(), usersHelpers.CheckRole(h.jwtkey, true))
 	router.DELETE("/config/socket/:id", h.removeSocket(), usersHelpers.CheckRole(h.jwtkey, true))
-	router.GET("/config/sockets", h.listSockets())
+	router.GET("/config/sockets", h.listSockets(), usersHelpers.CheckRole(h.jwtkey, false))
 
-	router.POST("/control", h.setValue())
-	router.GET("/control/:id", h.getAll())
+	router.POST("/control", h.setValue(), usersHelpers.CheckRole(h.jwtkey, false))
+	router.GET("/control/:id", h.getAll(), usersHelpers.CheckRole(h.jwtkey, false))
 	return nil
 } 
 
